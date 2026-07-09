@@ -1,5 +1,7 @@
 # Sluice
 
+[![PyPI version](https://img.shields.io/pypi/v/sluice-taint)](https://pypi.org/project/sluice-taint/)
+
 Agents do not just answer questions. They reach into files, databases, APIs, and inboxes through MCP. Each hop is another place data can end up where you did not intend.
 
 Sluice is the gate on that path. It reads what goes out to tools and what comes back, applies your rules, and keeps a short memory of sensitive values for the rest of the conversation. If the model tries to ship the same value somewhere new, the gate stays shut.
@@ -48,7 +50,24 @@ secret p50=0.61 ms   p95=0.85 ms
 
 Reproduce with `python -m sluice.bench.latency`.
 
+## Install
+
+```bash
+pip install sluice-taint
+```
+
+PyPI package: [sluice-taint](https://pypi.org/project/sluice-taint/). The CLI command is still `sluice`.
+
 ## Get started
+
+```bash
+sluice init
+sluice serve
+```
+
+The proxy listens on `127.0.0.1:4444` by default. Edit `config.yaml` before you point anything real at it.
+
+### From source
 
 ```bash
 git clone https://github.com/krishyaid-coder/sluice
@@ -57,8 +76,6 @@ pip install -e ".[dev]"
 sluice init
 sluice serve
 ```
-
-The proxy listens on `127.0.0.1:4444` by default. Edit `config.yaml` before you point anything real at it.
 
 ## Hook up Claude Desktop or Cursor
 

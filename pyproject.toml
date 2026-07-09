@@ -3,13 +3,25 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "sluice"
+name = "sluice-taint"
 version = "0.1.0"
 description = "A local gate for MCP traffic with cross-call memory for sensitive values."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.11"
 keywords = ["mcp", "agents", "security", "proxy", "audit"]
+authors = [{ name = "krishyaid-coder" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "fastapi>=0.111.0",
     "uvicorn[standard]>=0.30.0",
@@ -39,6 +51,7 @@ packages = ["sluice"]
 Homepage = "https://github.com/krishyaid-coder/sluice"
 Repository = "https://github.com/krishyaid-coder/sluice"
 Issues = "https://github.com/krishyaid-coder/sluice/issues"
+PyPI = "https://pypi.org/project/sluice-taint/"
 
 [tool.ruff]
 line-length = 100
