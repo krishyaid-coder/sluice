@@ -1,0 +1,51 @@
+version: 1
+
+proxy:
+  host: "127.0.0.1"
+  port: 4444
+
+upstreams:
+  - name: filesystem
+    transport: stdio
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+
+  # - name: github
+  #   transport: http
+  #   url: "http://localhost:3000"
+
+routing:
+  default: filesystem
+
+detectors:
+  secrets:
+    enabled: true
+  pii:
+    enabled: true
+  tool_poisoning:
+    enabled: true
+
+policy:
+  rules:
+    - detector: secrets.*
+      action: block
+    - detector: pii.*
+      action: redact
+    - detector: tool_poisoning.*
+      action: flag
+  default_action: flag
+
+taint:
+  enabled: true
+  min_length: 12
+  scope: session
+
+audit:
+  sink: sqlite
+  sqlite:
+    path: ~/.sluice/audit.db
+    retention_days: 30
+
+logging:
+  level: info
+  format: json

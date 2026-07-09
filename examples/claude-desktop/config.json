@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "filesystem-via-sluice": {
+      "command": "sluice",
+      "args": ["stdio", "--config", "/absolute/path/to/your/config.yaml"]
+    }
+  }
+}
