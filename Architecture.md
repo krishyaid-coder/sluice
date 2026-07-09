@@ -12,8 +12,8 @@ The design splits **transport** (how bytes move), **pipeline** (what to allow), 
 |  (Cursor, Claude,|  stdio   |                                          |
 |   custom agent)  +--------->+  Transport                               |
 |                  |   or     |    read/write JSON-RPC frames            |
-|                  |  HTTP    |         |                                  |
-+------------------+          |         v                                  |
+|                  |  HTTP    |         |                                |
++------------------+          |         v                                |
                               |  Pipeline (single enforcement point)     |
                               |    1. recall check (carryover memory)    |
                               |    2. detector scan                      |
@@ -22,10 +22,10 @@ The design splits **transport** (how bytes move), **pipeline** (what to allow), 
                               |         |                    |           |
                               |         |                    v           |
                               |         |              Audit (SQLite)    |
-                              |         v                                  |
+                              |         v                                |
                               |  Router                                  |
                               |    pick upstream by name                 |
-                              |         |                                  |
+                              |         |                                |
                               +---------+----------------------------------+
                                         |
                     +-------------------+-------------------+
