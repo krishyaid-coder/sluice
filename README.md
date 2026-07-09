@@ -20,6 +20,34 @@ Your agent calls `read_file` and the response includes `AKIAIOSFODNN7EXAMPLE`. T
 
 Two turns later it calls `send_email` and the body includes the same string. Sluice has no opinion about the first call. It stops the second one because the value already appeared inside this session and is trying to travel again.
 
+## v0.1.0
+
+This release ships:
+
+- stdio and HTTP transports with streamable HTTP (MCP 2025-03-26) for remote upstreams
+- Carryover memory across tool calls (`taint_leak`)
+- Secret, PII, and tool-poisoning detectors
+- Per-upstream and per-tool YAML policy
+- SQLite audit log and `sluice logs`
+- CLI: `init`, `serve`, `stdio`, `logs`, `doctor`, `version`
+- Legacy config migration to `config.yaml.upgraded`
+- `${VAR}` expansion in config values
+
+Quick demo script:
+
+```bash
+bash scripts/demo.sh
+```
+
+Performance on a developer laptop (pipeline only, 1 KB messages):
+
+```
+clean  p50=0.02 ms   p95=0.02 ms
+secret p50=0.61 ms   p95=0.85 ms
+```
+
+Reproduce with `python -m sluice.bench.latency`.
+
 ## Get started
 
 ```bash

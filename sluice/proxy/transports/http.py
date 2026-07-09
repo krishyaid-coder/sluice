@@ -6,6 +6,7 @@ import structlog
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
+from sluice.proxy.forwarder import HTTPUpstream
 from sluice.proxy.models import JSONRPCRequest, JSONRPCResponse
 from sluice.proxy.pipeline import Pipeline
 from sluice.proxy.router import Router, new_session_id
@@ -16,6 +17,10 @@ log = structlog.get_logger()
 def create_app(pipeline: Pipeline, router: Router) -> FastAPI:
     app = FastAPI(title="Sluice", version="0.1.0", description="Local MCP gate.")
 
+    def _upstream_http(name: str) -> HTTPUpstream | None:
+        resolved = router.resolve_upstream(name)
+        return router.http_upstream(resolved)
+
     async def _handle_proxy(upstream_name: str, request: Request) -> JSONResponse:
         session_id = request.headers.get("Mcp-Session-Id") or new_session_id()
         try:
@@ -25,9 +30,10 @@ def create_app(pipeline: Pipeline, router: Router) -> FastAPI:
 
         rpc = JSONRPCRequest.model_validate(body)
         raw = json.dumps(body)
+        resolved = router.resolve_upstream(upstream_name)
 
         clean_raw, violation = await pipeline.inspect_request(
-            raw, session_id=session_id, upstream=router.resolve_upstream(upstream_name)
+            raw, session_id=session_id, upstream=resolved
         )
 
         if violation and violation.action == "block":
@@ -44,9 +50,7 @@ def create_app(pipeline: Pipeline, router: Router) -> FastAPI:
             rpc = JSONRPCRequest.model_validate(body)
 
         try:
-            upstream_response = await router.dispatch(
-                upstream_name, rpc, session_id
-            )
+            upstream_response = await router.dispatch(upstream_name, rpc, session_id)
         except Exception as e:
             log.error("forward_failed", error=str(e), upstream=upstream_name)
             raise HTTPException(status_code=502, detail="Upstream MCP server unreachable")
@@ -55,7 +59,7 @@ def create_app(pipeline: Pipeline, router: Router) -> FastAPI:
         clean_resp, resp_violation = await pipeline.inspect_response(
             resp_raw,
             session_id=session_id,
-            upstream=router.resolve_upstream(upstream_name),
+            upstream=resolved,
             method=rpc.method,
         )
 
@@ -68,7 +72,11 @@ def create_app(pipeline: Pipeline, router: Router) -> FastAPI:
                 headers={"Mcp-Session-Id": session_id},
             )
 
-        content = json.loads(clean_resp) if resp_violation and resp_violation.action == "redact" else upstream_response.model_dump(exclude_none=True)
+        content = (
+            json.loads(clean_resp)
+            if resp_violation and resp_violation.action == "redact"
+            else upstream_response.model_dump(exclude_none=True)
+        )
         return JSONResponse(content=content, headers={"Mcp-Session-Id": session_id})
 
     @app.post("/")
@@ -83,20 +91,46 @@ def create_app(pipeline: Pipeline, router: Router) -> FastAPI:
 
     @app.get("/u/{upstream_name}")
     async def proxy_sse(upstream_name: str, request: Request):
+        if not router.has(upstream_name):
+            raise HTTPException(status_code=404, detail=f"Unknown upstream: {upstream_name}")
+
         session_id = request.headers.get("Mcp-Session-Id") or new_session_id()
+        resolved = router.resolve_upstream(upstream_name)
+        http_up = _upstream_http(upstream_name)
 
         async def event_stream():
-            yield f"data: {json.dumps({'type': 'session', 'session_id': session_id})}\n\n"
+            if http_up and http_up.is_streamable:
+                try:
+                    async for data in http_up.stream_events(session_id):
+                        clean, violation = await pipeline.inspect_response(
+                            data,
+                            session_id=session_id,
+                            upstream=resolved,
+                            method=None,
+                        )
+                        if violation and violation.action == "block":
+                            continue
+                        payload = clean if violation and violation.action == "redact" else data
+                        yield f"data: {payload}\n\n"
+                except Exception as e:
+                    log.error("sse_proxy_failed", error=str(e), upstream=upstream_name)
+                    yield f"data: {json.dumps({'error': 'upstream_sse_failed'})}\n\n"
+            else:
+                yield f"data: {json.dumps({'type': 'session', 'session_id': session_id})}\n\n"
 
         return StreamingResponse(
             event_stream(),
             media_type="text/event-stream",
-            headers={"Mcp-Session-Id": session_id, "Cache-Control": "no-cache"},
+            headers={
+                "Mcp-Session-Id": session_id,
+                "Cache-Control": "no-cache",
+                "MCP-Protocol-Version": "2025-03-26",
+            },
         )
 
     @app.get("/health")
     async def health():
-        return {"status": "ok", "service": "sluice"}
+        return {"status": "ok", "service": "sluice", "version": "0.1.0"}
 
     return app
 

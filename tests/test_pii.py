@@ -1,5 +1,5 @@
-from sluice.detectors.pii import PIIDetector, redact
 from sluice.detectors.base import ScanContext
+from sluice.detectors.pii import PIIDetector, redact
 
 
 def test_email_detected():

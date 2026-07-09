@@ -11,8 +11,10 @@ upstreams:
     args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
 
   # - name: github
-  #   transport: http
-  #   url: "http://localhost:3000"
+  #   transport: streamable_http
+  #   url: "https://api.github.com/mcp"
+  #   headers:
+  #     Authorization: "${GITHUB_TOKEN}"
 
 routing:
   default: filesystem

@@ -5,11 +5,17 @@ from dataclasses import dataclass
 
 import structlog
 
-from sluice.config.schema import PolicyConfig, SluiceConfig
+from sluice.config.schema import SluiceConfig
 from sluice.detectors import pii as pii_detector
 from sluice.detectors import secrets as secrets_detector
-from sluice.detectors.base import Hit, ScanContext, get_registry, load_entry_point_detectors, scan_all
 from sluice.detectors import tool_poisoning  # noqa: F401 — register detector
+from sluice.detectors.base import (
+    Hit,
+    ScanContext,
+    get_registry,
+    load_entry_point_detectors,
+    scan_all,
+)
 from sluice.proxy.models import PolicyViolation
 
 log = structlog.get_logger()

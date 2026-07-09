@@ -14,7 +14,7 @@ from sluice.proxy.forwarder import HTTPUpstream
 from sluice.proxy.models import JSONRPCRequest, JSONRPCResponse
 
 if TYPE_CHECKING:
-    from sluice.proxy.pipeline import Pipeline
+    pass
 
 log = structlog.get_logger()
 
@@ -84,6 +84,9 @@ class Router:
 
     def has(self, name: str) -> bool:
         return name in self._http or name in self._stdio
+
+    def http_upstream(self, name: str) -> HTTPUpstream | None:
+        return self._http.get(name)
 
     async def dispatch(
         self,

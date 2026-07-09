@@ -7,7 +7,8 @@ from typing import Any
 
 import yaml
 
-from sluice.config.schema import SluiceConfig, UpstreamConfig
+from sluice.config.migrate import is_legacy_config, migrate_legacy_config, write_upgraded_config
+from sluice.config.schema import SluiceConfig
 
 _ENV_PATTERN = re.compile(r"\$\{([^}]+)\}")
 
@@ -44,31 +45,7 @@ def _expand_paths(obj: Any) -> Any:
     return obj
 
 
-def migrate_legacy_config(raw: dict[str, Any]) -> dict[str, Any]:
-    if "upstreams" in raw:
-        return raw
-
-    migrated = dict(raw)
-    migrated.setdefault("version", 1)
-
-    upstream_block = migrated.pop("upstream", {})
-    transport = migrated.pop("transport", "http")
-
-    upstream = UpstreamConfig(
-        name="default",
-        transport=transport if transport in ("stdio", "http", "streamable_http") else "http",
-        url=upstream_block.get("url"),
-        command=upstream_block.get("command"),
-        args=upstream_block.get("args", []),
-        env=upstream_block.get("env", {}),
-        headers=upstream_block.get("headers", {}),
-    )
-    migrated["upstreams"] = [upstream.model_dump()]
-    migrated.setdefault("routing", {"default": "default"})
-    return migrated
-
-
-def load_config(path: str | Path) -> SluiceConfig:
+def load_config(path: str | Path, *, write_migration: bool = True) -> SluiceConfig:
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"config not found: {path}")
@@ -76,7 +53,18 @@ def load_config(path: str | Path) -> SluiceConfig:
     with path.open() as f:
         raw = yaml.safe_load(f) or {}
 
-    raw = migrate_legacy_config(raw)
+    if is_legacy_config(raw):
+        migrated = migrate_legacy_config(raw)
+        if write_migration:
+            upgraded = write_upgraded_config(path, migrated)
+            import warnings
+
+            warnings.warn(
+                f"legacy config migrated; review {upgraded}",
+                stacklevel=2,
+            )
+        raw = migrated
+
     raw = _expand_env_recursive(raw)
     raw = _expand_paths(raw)
 

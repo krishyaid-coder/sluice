@@ -1,8 +1,8 @@
 import pytest
 
+from sluice.config.schema import PolicyConfig, PolicyRule, SluiceConfig
 from sluice.detectors.base import ScanContext
 from sluice.detectors.secrets import SecretsDetector
-from sluice.config.schema import PolicyConfig, PolicyRule, SluiceConfig
 from sluice.policy.engine import bootstrap_detectors, evaluate
 
 
