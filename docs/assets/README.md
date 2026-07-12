@@ -7,8 +7,10 @@ Logo, favicon, social card, and the product demo GIF. Everything visual for the 
 | File | Use |
 |---|---|
 | `logo.svg` | Primary mark, 128×128, ink + teal accent. Use on light backgrounds. |
+| `logo-dark.svg` | Same mark tuned for dark backgrounds — near-white chevrons, brighter teal slit. |
 | `logo-mono.svg` | Same mark, single-color via `currentColor`. Use inside HTML/CSS where you want to inherit color. |
-| `logo-lockup.svg` | Horizontal mark + wordmark. Use in README header, docs site header. |
+| `logo-lockup.svg` | Horizontal mark + wordmark for light backgrounds. Use in README header, docs site header. |
+| `logo-lockup-dark.svg` | Lockup tuned for dark backgrounds. Paired with `logo-lockup.svg` via `<picture>` in the README. |
 | `favicon.svg` | Optimized for tiny sizes (thicker strokes, wider slit). Use as the browser tab / PyPI icon. |
 | `social-card.svg` | 1280×640 GitHub social preview. Upload via repo Settings → Social preview. |
 | `demo.gif` | *(not committed yet)* 30-second product demo. Embedded at top of README. |
@@ -28,9 +30,10 @@ Once the file is committed, the top-of-README image tag can point at it: `![Slui
 
 | Role | Hex | Notes |
 |---|---|---|
-| Ink | `#0B1220` | Primary text and mark. Deep near-black — easier on eyes than pure `#000`. |
-| Accent | `#0F766E` | Teal-700. Watchpoint slit, links, key CLI output. |
-| Accent bright | `#14B8A6` | Teal-500. Use when the accent needs to survive on a dark background. |
+| Ink (light bg) | `#0B1220` | Primary text and mark on light backgrounds. Deep near-black — easier on eyes than pure `#000`. |
+| Ink (dark bg) | `#E8ECF1` | Primary text and mark on dark backgrounds. Warm near-white — avoids the aggressive contrast of pure `#FFF`. |
+| Accent (light bg) | `#0F766E` | Teal-700. Watchpoint slit and links on light backgrounds. |
+| Accent (dark bg) | `#2DD4BF` | Teal-400. Vibrant enough to carry across GitHub's dark theme without becoming neon. |
 | Paper | `#FAFAF9` | Soft off-white for social cards and marketing surfaces. |
 | Muted | `#4A5568` | Secondary text on paper backgrounds. |
 
