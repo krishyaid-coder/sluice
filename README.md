@@ -20,6 +20,59 @@ Agents do not just answer questions. They reach into files, databases, APIs, and
 
 Sluice is the gate on that path. It reads what goes out to tools and what comes back, applies your rules, and keeps a short memory of sensitive values for the rest of the conversation. If the model tries to ship the same value somewhere new, the gate stays shut.
 
+## How it works
+
+Every JSON-RPC message passes through one pipeline: recall check → detectors → policy → audit → router.
+
+```mermaid
+flowchart LR
+    subgraph client [Your machine]
+        A[Cursor / Claude / curl]
+    end
+
+    subgraph sluice [Sluice process]
+        T[Transport\nstdio or HTTP]
+        P[Pipeline\nscan + policy + taint]
+        R[Router\npick upstream]
+        D[Dashboard /_sluice/]
+        DB[(audit.db)]
+    end
+
+    subgraph tools [MCP servers]
+        F[filesystem]
+        G[github]
+        M[mock / others]
+    end
+
+    A -->|JSON-RPC| T
+    T --> P
+    P -->|allow| R
+    P -->|block| T
+    P --> DB
+    R --> F
+    R --> G
+    R --> M
+    F --> R
+    G --> R
+    M --> R
+    R --> P
+    P --> T
+    T --> A
+    D --> DB
+```
+
+| Component | Role |
+|---|---|
+| `config.yaml` | Upstreams, policy rules, taint, audit path |
+| **Transport** | stdio for desktop clients; HTTP for servers and Docker |
+| **Pipeline** | Taint recall, detector scan, policy action, audit write |
+| **Router** | Forwards allowed messages to the right MCP upstream |
+| **Detectors** | Secrets, PII, tool poisoning, prompt injection |
+| **Taint store** | Remembers sensitive values per session; blocks reuse (`taint_leak`) |
+| **Audit / dashboard** | SQLite log + browser UI at `/_sluice/` |
+
+**Desktop (stdio):** `Cursor → sluice stdio → MCP server child process` · **Server (HTTP):** `curl / agent → :4444 → pipeline → upstream MCP`
+
 ## What this is (and what it is not)
 
 Most MCP security tools work like a mailbox scanner. They open one envelope, look for a credit card or API key, and decide whether to let that single message through.
@@ -203,59 +256,6 @@ When a remembered value shows up again in an outbound call, the refusal reason i
 Everything runs on your machine. Audit rows land in `~/.sluice/audit.db` unless you point them elsewhere.
 
 ## Architecture
-
-Sluice sits between your agent and MCP tool servers. Every JSON-RPC message passes through one pipeline: recall check → detectors → policy → audit → router.
-
-```mermaid
-flowchart LR
-    subgraph client [Your machine]
-        A[Cursor / Claude / curl]
-    end
-
-    subgraph sluice [Sluice process]
-        T[Transport\nstdio or HTTP]
-        P[Pipeline\nscan + policy + taint]
-        R[Router\npick upstream]
-        D[Dashboard /_sluice/]
-        DB[(audit.db)]
-    end
-
-    subgraph tools [MCP servers]
-        F[filesystem]
-        G[github]
-        M[mock / others]
-    end
-
-    A -->|JSON-RPC| T
-    T --> P
-    P -->|allow| R
-    P -->|block| T
-    P --> DB
-    R --> F
-    R --> G
-    R --> M
-    F --> R
-    G --> R
-    M --> R
-    R --> P
-    P --> T
-    T --> A
-    D --> DB
-```
-
-| Component | Role |
-|---|---|
-| `config.yaml` | Upstreams, policy rules, taint, audit path |
-| **Transport** | stdio for desktop clients; HTTP for servers and Docker |
-| **Pipeline** | Taint recall, detector scan, policy action, audit write |
-| **Router** | Forwards allowed messages to the right MCP upstream |
-| **Detectors** | Secrets, PII, tool poisoning, prompt injection |
-| **Taint store** | Remembers sensitive values per session; blocks reuse (`taint_leak`) |
-| **Audit / dashboard** | SQLite log + browser UI at `/_sluice/` |
-
-**Desktop (stdio):** `Cursor → sluice stdio → MCP server child process`
-
-**Server (HTTP):** `curl / agent → :4444 → pipeline → upstream MCP`
 
 See [Architecture.md](Architecture.md) for the full request path and module map.
 
