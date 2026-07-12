@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sluice-taint"
-version = "0.3.0"
+version = "0.3.2"
 description = "A local gate for MCP traffic with cross-call memory for sensitive values."
 readme = "README.md"
 license = "Apache-2.0"
@@ -53,11 +53,6 @@ otel = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["sluice"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"sluice/policy/presets" = "sluice/policy/presets"
-"sluice/dashboard/templates" = "sluice/dashboard/templates"
-"sluice/dashboard/static" = "sluice/dashboard/static"
 
 [project.urls]
 Homepage = "https://github.com/krishyaid-coder/sluice"
