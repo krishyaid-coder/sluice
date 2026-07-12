@@ -11,6 +11,7 @@ import yaml
 from sluice import __version__
 from sluice.audit import build_audit_sink
 from sluice.audit.sink import AuditFilter
+from sluice.cli.presets import presets_app
 from sluice.config.loader import find_config, load_config
 from sluice.config.schema import default_config
 from sluice.proxy.pipeline import Pipeline
@@ -24,6 +25,7 @@ app = typer.Typer(
     help="Local MCP gate with cross-call memory for sensitive values.",
     no_args_is_help=True,
 )
+app.add_typer(presets_app, name="presets")
 
 
 def _setup_logging(level: str = "info") -> None:
@@ -76,7 +78,10 @@ def serve_cmd(
     bind_host = host or cfg.proxy.host
     bind_port = port or cfg.proxy.port
     typer.echo(f"Sluice listening on http://{bind_host}:{bind_port}")
-    transport = HTTPTransport(bind_host, bind_port, pipeline, router)
+    if cfg.dashboard.enabled:
+        dash_path = cfg.dashboard.path.rstrip("/") or "/_sluice"
+        typer.echo(f"Dashboard: http://{bind_host}:{bind_port}{dash_path}/")
+    transport = HTTPTransport(bind_host, bind_port, pipeline, router, cfg)
     asyncio.run(transport.run(pipeline, router))
 
 

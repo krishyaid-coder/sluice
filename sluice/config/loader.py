@@ -53,6 +53,10 @@ def load_config(path: str | Path, *, write_migration: bool = True) -> SluiceConf
     with path.open() as f:
         raw = yaml.safe_load(f) or {}
 
+    from sluice.config.presets import resolve_includes
+
+    raw = resolve_includes(raw, path)
+
     if is_legacy_config(raw):
         migrated = migrate_legacy_config(raw)
         if write_migration:

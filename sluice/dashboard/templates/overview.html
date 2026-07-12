@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Sluice Dashboard</title>
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+  <header>
+    <h1>Sluice</h1>
+    <nav>
+      <a href="./">Overview</a>
+      <a href="events">Events</a>
+      <a href="sessions">Sessions</a>
+    </nav>
+  </header>
+  <main>
+    <h2>Last 24 hours</h2>
+    <p class="muted">Total events: {{ stats.total }}</p>
+    <section class="grid">
+      <article>
+        <h3>By action</h3>
+        <ul>
+          {% for action, count in stats.actions.items() %}
+          <li><a href="/events?action={{ action }}">{{ action }}</a>: {{ count }}</li>
+          {% else %}
+          <li class="muted">No events yet.</li>
+          {% endfor %}
+        </ul>
+      </article>
+      <article>
+        <h3>Top detectors</h3>
+        <ul>
+          {% for detector, count in stats.detectors.items() %}
+          <li>{{ detector }}: {{ count }}</li>
+          {% else %}
+          <li class="muted">No detector hits yet.</li>
+          {% endfor %}
+        </ul>
+      </article>
+      <article>
+        <h3>Runtime</h3>
+        <ul>
+          <li>Active taint sessions: {{ active_sessions }}</li>
+          <li>Config version: {{ version }}</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

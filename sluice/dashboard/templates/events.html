@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Sluice Events</title>
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+  <header>
+    <h1>Sluice</h1>
+    <nav>
+      <a href="./">Overview</a>
+      <a href="events">Events</a>
+      <a href="sessions">Sessions</a>
+    </nav>
+  </header>
+  <main>
+    <h2>Recent events</h2>
+    <form method="get" class="filters">
+      <input name="upstream" placeholder="upstream" value="{{ upstream or '' }}">
+      <input name="action" placeholder="action" value="{{ action or '' }}">
+      <input name="session_id" placeholder="session id" value="{{ session_id or '' }}">
+      <button type="submit">Filter</button>
+    </form>
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Action</th>
+          <th>Upstream</th>
+          <th>Direction</th>
+          <th>Method</th>
+          <th>Tool</th>
+          <th>Detectors</th>
+          <th>Rule</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+        <tr>
+          <td>{{ event.ts }}</td>
+          <td><span class="badge {{ event.action }}">{{ event.action }}</span></td>
+          <td>{{ event.upstream }}</td>
+          <td>{{ event.direction }}</td>
+          <td>{{ event.method or '-' }}</td>
+          <td>{{ event.tool or '-' }}</td>
+          <td>{{ event.detectors | join(', ') }}</td>
+          <td>{{ event.rule or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="muted">No events match.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

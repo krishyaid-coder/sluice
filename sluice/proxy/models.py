@@ -22,6 +22,8 @@ class PolicyViolation(BaseModel):
     detail: str
     action: str
     detectors: list[str] = Field(default_factory=list)
+    preset_source: str | None = None
+    propagation: list[dict[str, str | None]] | None = None
 
 
 class AuditEvent(BaseModel):
@@ -35,3 +37,8 @@ class AuditEvent(BaseModel):
     rule: str | None = None
     redacted_preview: str | None = None
     latency_us: int | None = None
+    preset_source: str | None = None
+    client_ip: str | None = None
+    propagation: list[dict[str, str | None]] | None = None
+    event_id: int | None = None
+    ts: int | None = None

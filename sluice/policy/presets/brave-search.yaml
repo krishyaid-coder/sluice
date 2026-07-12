@@ -1,0 +1,18 @@
+policy:
+  rules:
+    - detector: secrets.*
+      action: flag
+      upstream: brave-search
+      preset_source: brave-search
+    - detector: pii.*
+      action: redact
+      upstream: brave-search
+      preset_source: brave-search
+    - detector: tool_poisoning.*
+      action: flag
+      upstream: brave-search
+      preset_source: brave-search
+    - detector: prompt_injection.*
+      action: flag
+      upstream: brave-search
+      preset_source: brave-search

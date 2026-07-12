@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Sluice Sessions</title>
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+  <header>
+    <h1>Sluice</h1>
+    <nav>
+      <a href="./">Overview</a>
+      <a href="events">Events</a>
+      <a href="sessions">Sessions</a>
+    </nav>
+  </header>
+  <main>
+    <h2>Active sessions (24h)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Session</th>
+          <th>Events</th>
+          <th>Taint marks</th>
+          <th>Last seen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in sessions %}
+        <tr>
+          <td><a href="/events?session_id={{ row.session_id }}">{{ row.session_id[:12] }}…</a></td>
+          <td>{{ row.events }}</td>
+          <td>{{ row.marks }}</td>
+          <td>{{ row.last_ts }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="muted">No sessions yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

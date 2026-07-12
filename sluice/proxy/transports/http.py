@@ -6,23 +6,40 @@ import structlog
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
+from sluice.config.schema import SluiceConfig
 from sluice.proxy.forwarder import HTTPUpstream
 from sluice.proxy.models import JSONRPCRequest, JSONRPCResponse
 from sluice.proxy.pipeline import Pipeline
 from sluice.proxy.router import Router, new_session_id
+from sluice.proxy.transports.streamable_http import SSESessionManager
 
 log = structlog.get_logger()
 
 
-def create_app(pipeline: Pipeline, router: Router) -> FastAPI:
-    app = FastAPI(title="Sluice", version="0.1.0", description="Local MCP gate.")
+def create_app(pipeline: Pipeline, router: Router, cfg: SluiceConfig | None = None) -> FastAPI:
+    from sluice import __version__
+
+    app = FastAPI(title="Sluice", version=__version__, description="Local MCP gate.")
+    sse_manager = SSESessionManager(
+        buffer_size=cfg.transports.streamable_http.session_buffer if cfg else 512,
+        idle_seconds=cfg.transports.streamable_http.session_idle_seconds if cfg else 300,
+    )
 
     def _upstream_http(name: str) -> HTTPUpstream | None:
         resolved = router.resolve_upstream(name)
         return router.http_upstream(resolved)
 
+    def _client_ip(request: Request) -> str | None:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+        if request.client:
+            return request.client.host
+        return None
+
     async def _handle_proxy(upstream_name: str, request: Request) -> JSONResponse:
         session_id = request.headers.get("Mcp-Session-Id") or new_session_id()
+        client_ip = _client_ip(request)
         try:
             body = await request.json()
         except Exception:
@@ -33,7 +50,7 @@ def create_app(pipeline: Pipeline, router: Router) -> FastAPI:
         resolved = router.resolve_upstream(upstream_name)
 
         clean_raw, violation = await pipeline.inspect_request(
-            raw, session_id=session_id, upstream=resolved
+            raw, session_id=session_id, upstream=resolved, client_ip=client_ip
         )
 
         if violation and violation.action == "block":
@@ -61,6 +78,7 @@ def create_app(pipeline: Pipeline, router: Router) -> FastAPI:
             session_id=session_id,
             upstream=resolved,
             method=rpc.method,
+            client_ip=client_ip,
         )
 
         if resp_violation and resp_violation.action == "block":
@@ -95,28 +113,41 @@ def create_app(pipeline: Pipeline, router: Router) -> FastAPI:
             raise HTTPException(status_code=404, detail=f"Unknown upstream: {upstream_name}")
 
         session_id = request.headers.get("Mcp-Session-Id") or new_session_id()
+        last_event_id = int(request.headers.get("Last-Event-Id", "0") or "0")
         resolved = router.resolve_upstream(upstream_name)
         http_up = _upstream_http(upstream_name)
+        client_ip = _client_ip(request)
 
         async def event_stream():
+            for replay in await sse_manager.replay_after(session_id, last_event_id):
+                yield f"id: {replay.id}\ndata: {replay.data}\n\n"
+
             if http_up and http_up.is_streamable:
                 try:
-                    async for data in http_up.stream_events(session_id):
+                    async for data in http_up.stream_events(
+                        session_id, last_event_id=last_event_id
+                    ):
                         clean, violation = await pipeline.inspect_response(
                             data,
                             session_id=session_id,
                             upstream=resolved,
                             method=None,
+                            client_ip=client_ip,
                         )
                         if violation and violation.action == "block":
                             continue
                         payload = clean if violation and violation.action == "redact" else data
-                        yield f"data: {payload}\n\n"
+                        event_id = await sse_manager.append(session_id, payload)
+                        yield f"id: {event_id}\ndata: {payload}\n\n"
                 except Exception as e:
                     log.error("sse_proxy_failed", error=str(e), upstream=upstream_name)
-                    yield f"data: {json.dumps({'error': 'upstream_sse_failed'})}\n\n"
+                    err = json.dumps({"error": "upstream_sse_failed"})
+                    event_id = await sse_manager.append(session_id, err)
+                    yield f"id: {event_id}\ndata: {err}\n\n"
             else:
-                yield f"data: {json.dumps({'type': 'session', 'session_id': session_id})}\n\n"
+                payload = json.dumps({"type": "session", "session_id": session_id})
+                event_id = await sse_manager.append(session_id, payload)
+                yield f"id: {event_id}\ndata: {payload}\n\n"
 
         return StreamingResponse(
             event_stream(),
@@ -130,23 +161,38 @@ def create_app(pipeline: Pipeline, router: Router) -> FastAPI:
 
     @app.get("/health")
     async def health():
-        return {"status": "ok", "service": "sluice", "version": "0.1.0"}
+        return {"status": "ok", "service": "sluice", "version": __version__}
+
+    if cfg and cfg.dashboard.enabled:
+        from sluice.dashboard.app import create_dashboard
+
+        dashboard_app = create_dashboard(cfg, pipeline._audit)
+        mount_path = cfg.dashboard.path.rstrip("/") or "/_sluice"
+        app.mount(mount_path, dashboard_app)
 
     return app
 
 
 class HTTPTransport:
-    def __init__(self, host: str, port: int, pipeline: Pipeline, router: Router):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        pipeline: Pipeline,
+        router: Router,
+        cfg: SluiceConfig | None = None,
+    ):
         self._host = host
         self._port = port
         self._pipeline = pipeline
         self._router = router
+        self._cfg = cfg
         self._server = None
 
     async def run(self, pipeline: Pipeline, router: Router) -> None:
         import uvicorn
 
-        app = create_app(pipeline, router)
+        app = create_app(pipeline, router, self._cfg)
         config = uvicorn.Config(app, host=self._host, port=self._port, log_level="info")
         server = uvicorn.Server(config)
         self._server = server

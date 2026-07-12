@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class ProxyConfig(BaseModel):
@@ -41,6 +41,7 @@ class DetectorsConfig(BaseModel):
     secrets: DetectorToggle = Field(default_factory=DetectorToggle)
     pii: DetectorToggle = Field(default_factory=DetectorToggle)
     tool_poisoning: DetectorToggle = Field(default_factory=DetectorToggle)
+    prompt_injection: DetectorToggle = Field(default_factory=DetectorToggle)
 
 
 class PolicyRule(BaseModel):
@@ -48,6 +49,7 @@ class PolicyRule(BaseModel):
     action: Literal["block", "redact", "flag", "pass"]
     upstream: str | None = None
     tool: str | None = None
+    preset_source: str | None = None
 
 
 class PolicyConfig(BaseModel):
@@ -59,6 +61,29 @@ class TaintConfig(BaseModel):
     enabled: bool = True
     min_length: int = 12
     scope: Literal["session", "process"] = "session"
+    provenance: bool = True
+
+
+class StreamableHttpConfig(BaseModel):
+    session_buffer: int = 512
+    session_idle_seconds: int = 300
+
+
+class TransportsConfig(BaseModel):
+    streamable_http: StreamableHttpConfig = Field(default_factory=StreamableHttpConfig)
+
+
+class DashboardConfig(BaseModel):
+    enabled: bool = True
+    path: str = "/_sluice"
+    token: str | None = None
+    page_size: int = 50
+
+
+class OtelConfig(BaseModel):
+    enabled: bool = False
+    endpoint: str = "http://localhost:4318/v1/traces"
+    service_name: str = "sluice"
 
 
 class SqliteAuditConfig(BaseModel):
@@ -67,7 +92,7 @@ class SqliteAuditConfig(BaseModel):
 
 
 class AuditConfig(BaseModel):
-    sink: Literal["sqlite", "stdout", "both"] = "sqlite"
+    sink: Literal["sqlite", "stdout", "both", "otel", "all"] = "sqlite"
     sqlite: SqliteAuditConfig = Field(default_factory=SqliteAuditConfig)
 
 
@@ -78,12 +103,16 @@ class LoggingConfig(BaseModel):
 
 class SluiceConfig(BaseModel):
     version: int = 1
+    include: list[str] = Field(default_factory=list)
     proxy: ProxyConfig = Field(default_factory=ProxyConfig)
     upstreams: list[UpstreamConfig] = Field(default_factory=list)
     routing: RoutingConfig = Field(default_factory=RoutingConfig)
     detectors: DetectorsConfig = Field(default_factory=DetectorsConfig)
     policy: PolicyConfig = Field(default_factory=PolicyConfig)
     taint: TaintConfig = Field(default_factory=TaintConfig)
+    transports: TransportsConfig = Field(default_factory=TransportsConfig)
+    dashboard: DashboardConfig = Field(default_factory=DashboardConfig)
+    otel: OtelConfig = Field(default_factory=OtelConfig)
     audit: AuditConfig = Field(default_factory=AuditConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
 
@@ -97,9 +126,20 @@ class SluiceConfig(BaseModel):
             raise ValueError("upstream names must be unique")
         return v
 
+    @model_validator(mode="after")
+    def validate_dashboard_security(self) -> SluiceConfig:
+        host = self.proxy.host
+        non_loopback = host not in ("127.0.0.1", "localhost", "::1")
+        if self.dashboard.enabled and non_loopback and not self.dashboard.token:
+            raise ValueError(
+                "dashboard requires dashboard.token when proxy.host is not loopback"
+            )
+        return self
+
 
 def default_config() -> SluiceConfig:
     return SluiceConfig(
+        include=["preset:filesystem"],
         upstreams=[
             UpstreamConfig(
                 name="filesystem",
@@ -113,6 +153,7 @@ def default_config() -> SluiceConfig:
                 PolicyRule(detector="secrets.*", action="block"),
                 PolicyRule(detector="pii.*", action="redact"),
                 PolicyRule(detector="tool_poisoning.*", action="flag"),
+                PolicyRule(detector="prompt_injection.*", action="flag"),
             ]
         ),
     )

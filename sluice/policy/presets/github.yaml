@@ -1,0 +1,18 @@
+policy:
+  rules:
+    - detector: secrets.*
+      action: block
+      upstream: github
+      preset_source: github
+    - detector: pii.*
+      action: redact
+      upstream: github
+      preset_source: github
+    - detector: tool_poisoning.*
+      action: block
+      upstream: github
+      preset_source: github
+    - detector: prompt_injection.*
+      action: flag
+      upstream: github
+      preset_source: github

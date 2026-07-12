@@ -78,12 +78,16 @@ class HTTPUpstream:
                     return JSONRPCResponse.model_validate(json.loads(payload))
         raise ValueError(f"upstream {self._cfg.name} returned SSE without JSON data")
 
-    async def stream_events(self, session_id: str) -> AsyncIterator[str]:
+    async def stream_events(
+        self, session_id: str, *, last_event_id: int = 0
+    ) -> AsyncIterator[str]:
         url = self._cfg.url
         if not url:
             raise ValueError(f"upstream {self._cfg.name} has no url")
 
         headers = self._base_headers(session_id)
+        if last_event_id:
+            headers["Last-Event-Id"] = str(last_event_id)
         try:
             async with self._client.stream("GET", url, headers=headers) as resp:
                 resp.raise_for_status()

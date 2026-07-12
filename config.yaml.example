@@ -1,5 +1,8 @@
 version: 1
 
+include:
+  - preset:filesystem
+
 proxy:
   host: "127.0.0.1"
   port: 4444
@@ -26,6 +29,8 @@ detectors:
     enabled: true
   tool_poisoning:
     enabled: true
+  prompt_injection:
+    enabled: true
 
 policy:
   rules:
@@ -35,12 +40,25 @@ policy:
       action: redact
     - detector: tool_poisoning.*
       action: flag
+    - detector: prompt_injection.*
+      action: flag
   default_action: flag
 
 taint:
   enabled: true
   min_length: 12
   scope: session
+  provenance: true
+
+transports:
+  streamable_http:
+    session_buffer: 512
+    session_idle_seconds: 300
+
+dashboard:
+  enabled: true
+  path: "/_sluice"
+  page_size: 50
 
 audit:
   sink: sqlite

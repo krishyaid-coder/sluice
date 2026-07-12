@@ -1,0 +1,18 @@
+policy:
+  rules:
+    - detector: secrets.*
+      action: block
+      upstream: slack
+      preset_source: slack
+    - detector: pii.*
+      action: redact
+      upstream: slack
+      preset_source: slack
+    - detector: tool_poisoning.*
+      action: block
+      upstream: slack
+      preset_source: slack
+    - detector: prompt_injection.*
+      action: block
+      upstream: slack
+      preset_source: slack

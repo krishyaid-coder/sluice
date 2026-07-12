@@ -22,6 +22,21 @@ Your agent calls `read_file` and the response includes `AKIAIOSFODNN7EXAMPLE`. T
 
 Two turns later it calls `send_email` and the body includes the same string. Sluice has no opinion about the first call. It stops the second one because the value already appeared inside this session and is trying to travel again.
 
+## v0.3.0
+
+New in this release:
+
+- Policy presets for filesystem, github, slack, postgres, brave-search (`sluice presets`)
+- Read-only HTML dashboard at `/_sluice/`
+- Docker image (`Dockerfile`) for HTTP deployments
+- Integration tests against a mock MCP server in CI
+- Taint v2: JSON-path provenance + propagation graph in audit log
+- Prompt-injection detector on tool responses
+- Optional OpenTelemetry exporter (`pip install sluice-taint[otel]`)
+- Full streamable HTTP SSE reconnect with `Last-Event-Id`
+
+**Full setup and validation guide:** [docs/guide.md](docs/guide.md)
+
 ## v0.1.0
 
 This release ships:

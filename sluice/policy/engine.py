@@ -7,8 +7,11 @@ import structlog
 
 from sluice.config.schema import SluiceConfig
 from sluice.detectors import pii as pii_detector
+from sluice.detectors import (
+    prompt_injection,  # noqa: F401 — register detector
+    tool_poisoning,  # noqa: F401 — register detector
+)
 from sluice.detectors import secrets as secrets_detector
-from sluice.detectors import tool_poisoning  # noqa: F401 — register detector
 from sluice.detectors.base import (
     Hit,
     ScanContext,
@@ -25,6 +28,7 @@ log = structlog.get_logger()
 class ResolvedAction:
     action: str
     rule_detector: str
+    preset_source: str | None
     hits: list[Hit]
 
 
@@ -36,6 +40,8 @@ def _enabled_categories(cfg: SluiceConfig) -> set[str]:
         enabled.add("pii")
     if cfg.detectors.tool_poisoning.enabled:
         enabled.add("tool_poisoning")
+    if cfg.detectors.prompt_injection.enabled:
+        enabled.add("prompt_injection")
     return enabled
 
 
@@ -78,11 +84,17 @@ def resolve_action(
             if _match_rule(rule.detector, rule.upstream, rule.tool, h, upstream, tool)
         ]
         if matching:
-            return ResolvedAction(action=rule.action, rule_detector=rule.detector, hits=matching)
+            return ResolvedAction(
+                action=rule.action,
+                rule_detector=rule.detector,
+                preset_source=rule.preset_source,
+                hits=matching,
+            )
 
     return ResolvedAction(
         action=cfg.policy.default_action,
         rule_detector="default",
+        preset_source=None,
         hits=hits,
     )
 
@@ -114,6 +126,7 @@ def evaluate(
             detail=f"Refusing call: matched {primary.label} during {context.method or context.direction}.",
             action="block",
             detectors=[h.detector_id for h in resolved.hits],
+            preset_source=resolved.preset_source,
         ), hits
 
     if resolved.action == "redact":
@@ -130,6 +143,7 @@ def evaluate(
             detail=f"Removed sensitive fragments before forwarding ({context.method or context.direction}).",
             action="redact",
             detectors=[h.detector_id for h in hits],
+            preset_source=resolved.preset_source,
         ), hits
 
     if resolved.action == "flag":
@@ -139,6 +153,7 @@ def evaluate(
             detail=f"Flagged '{resolved.hits[0].label}' in {context.method or context.direction}.",
             action="flag",
             detectors=[h.detector_id for h in hits],
+            preset_source=resolved.preset_source,
         ), hits
 
     return raw, None, hits

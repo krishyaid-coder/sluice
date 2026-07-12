@@ -1,0 +1,18 @@
+policy:
+  rules:
+    - detector: secrets.*
+      action: block
+      upstream: postgres
+      preset_source: postgres
+    - detector: pii.*
+      action: redact
+      upstream: postgres
+      preset_source: postgres
+    - detector: tool_poisoning.*
+      action: flag
+      upstream: postgres
+      preset_source: postgres
+    - detector: prompt_injection.*
+      action: flag
+      upstream: postgres
+      preset_source: postgres
