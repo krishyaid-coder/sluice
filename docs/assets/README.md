@@ -1,8 +1,69 @@
-# Place demo.gif here after recording.
+# Sluice Brand Assets
 
-See [demo-recording.md](demo-recording.md) for instructions.
+Logo, favicon, social card, and the product demo GIF. Everything visual for the project lives here.
+
+## Files
+
+| File | Use |
+|---|---|
+| `logo.svg` | Primary mark, 128×128, ink + teal accent. Use on light backgrounds. |
+| `logo-mono.svg` | Same mark, single-color via `currentColor`. Use inside HTML/CSS where you want to inherit color. |
+| `logo-lockup.svg` | Horizontal mark + wordmark. Use in README header, docs site header. |
+| `favicon.svg` | Optimized for tiny sizes (thicker strokes, wider slit). Use as the browser tab / PyPI icon. |
+| `social-card.svg` | 1280×640 GitHub social preview. Upload via repo Settings → Social preview. |
+| `demo.gif` | *(not committed yet)* 30-second product demo. Embedded at top of README. |
+
+## Recording `demo.gif`
+
+See [demo-recording.md](demo-recording.md) for the storyboard and capture steps.
 
 ```bash
 bash scripts/demo.sh
 # record terminal → save as demo.gif in this folder
 ```
+
+Once the file is committed, the top-of-README image tag can point at it: `![Sluice demo](docs/assets/demo.gif)`.
+
+## Palette
+
+| Role | Hex | Notes |
+|---|---|---|
+| Ink | `#0B1220` | Primary text and mark. Deep near-black — easier on eyes than pure `#000`. |
+| Accent | `#0F766E` | Teal-700. Watchpoint slit, links, key CLI output. |
+| Accent bright | `#14B8A6` | Teal-500. Use when the accent needs to survive on a dark background. |
+| Paper | `#FAFAF9` | Soft off-white for social cards and marketing surfaces. |
+| Muted | `#4A5568` | Secondary text on paper backgrounds. |
+
+## Typography
+
+Wordmark uses a bold geometric sans-serif via the system stack:
+
+```
+-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif
+```
+
+At weight 700–800 with letter-spacing `-0.02em` to `-0.03em`. If you install a specific typeface later (Inter, Söhne, GT America), swap the `font-family` in `logo-lockup.svg` and `social-card.svg`.
+
+Monospace anywhere code is shown: `ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace`.
+
+## Design intent
+
+The mark is two facing chevrons (`>` `<`) with a vertical slit between them — a narrow aperture. The chevrons are the walls of the gate. The slit is the watchpoint: the value being seen and remembered.
+
+Two readings on purpose:
+1. **A gate on the wire.** The literal metaphor for the product.
+2. **`>` and `<` — developer-friendly angle brackets.** A visual cue that this is a CLI-first tool for engineers.
+
+The teal accent isolates the slit — the metaphor of the logo becomes visible.
+
+## Usage rules
+
+- Do not add gradients, shadows, or 3D effects to the mark. It is meant to read flat.
+- Do not rotate the mark. Chevrons are directional; they only work vertical.
+- Minimum size: 16×16 for `favicon.svg`, 24×24 for `logo.svg`. Below that, use text.
+- Clear space around the mark: at least half the mark's height on all sides.
+- Do not recolor the accent to red, orange, or any warning color. Sluice is precision, not alarm.
+
+## When to update this doc
+
+Only when a decision changes: new accent color, wordmark typeface swap, additional asset variants. Not for individual file edits.

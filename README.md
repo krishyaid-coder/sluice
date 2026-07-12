@@ -1,6 +1,16 @@
-# Sluice
+<p align="center">
+  <img src="docs/assets/logo-lockup.svg" alt="Sluice" width="280">
+</p>
 
-[![PyPI version](https://img.shields.io/pypi/v/sluice-taint)](https://pypi.org/project/sluice-taint/)
+<p align="center">
+  <em>The MCP gate that remembers what your agent already saw.</em>
+</p>
+
+<p align="center">
+  <a href="https://pypi.org/project/sluice-taint/"><img src="https://img.shields.io/pypi/v/sluice-taint" alt="PyPI version"></a>
+</p>
+
+---
 
 Agents do not just answer questions. They reach into files, databases, APIs, and inboxes through MCP. Each hop is another place data can end up where you did not intend.
 

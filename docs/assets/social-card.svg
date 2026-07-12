@@ -1,0 +1,18 @@
+<svg viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sluice — the MCP gate that remembers">
+  <title>Sluice</title>
+  <desc>The MCP gate that remembers what your agent already saw.</desc>
+
+  <rect width="1280" height="640" fill="#FAFAF9"/>
+
+  <g transform="translate(520, 140)" aria-hidden="true">
+    <path d="M 52 40 L 116 128 L 52 216" fill="none" stroke="#0B1220" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 204 40 L 140 128 L 204 216" fill="none" stroke="#0B1220" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="122" y="96" width="12" height="64" rx="2" fill="#0F766E"/>
+  </g>
+
+  <text x="640" y="450" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif" font-size="96" font-weight="800" letter-spacing="-3" fill="#0B1220">Sluice</text>
+
+  <text x="640" y="510" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif" font-size="24" font-weight="500" letter-spacing="6" fill="#4A5568">THE MCP GATE THAT REMEMBERS</text>
+
+  <text x="640" y="580" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="18" font-weight="500" fill="#0F766E">pip install sluice-taint</text>
+</svg>

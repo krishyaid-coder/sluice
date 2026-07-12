@@ -1,0 +1,6 @@
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sluice">
+  <title>Sluice</title>
+  <path d="M 22 18 L 58 64 L 22 110" fill="none" stroke="#0B1220" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 106 18 L 70 64 L 106 110" fill="none" stroke="#0B1220" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="60" y="52" width="8" height="24" rx="1.5" fill="#0F766E"/>
+</svg>
