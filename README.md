@@ -89,7 +89,7 @@ Your agent calls `read_file` and the response includes `AKIAIOSFODNN7EXAMPLE`. T
 
 Two turns later it calls `send_email` and the body includes the same string. Sluice has no opinion about the first call. It stops the second one because the value already appeared inside this session and is trying to travel again.
 
-![Sluice demo: direct secret block and cross-tool taint leak](docs/assets/demo.gif)
+<video controls playsinline width="100%" src="docs/assets/demo_new.mov"></video>
 
 Run it yourself: `bash scripts/demo.sh`
 
@@ -114,7 +114,7 @@ New in this release:
 bash scripts/demo.sh
 ```
 
-Shows Part 1 (secret blocked on outbound) and Part 2 (`read_file` → `send_email` blocked by `taint_leak`). See the GIF above, or [docs/demo-recording.md](docs/demo-recording.md) to record your own.
+Shows Part 1 (secret blocked on outbound) and Part 2 (`read_file` → `send_email` blocked by `taint_leak`). See the video above, or [docs/demo-recording.md](docs/demo-recording.md) to record your own.
 
 ### Docker (HTTP mode)
 

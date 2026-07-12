@@ -1,6 +1,6 @@
 # Sluice Brand Assets
 
-Logo, favicon, social card, and the product demo GIF. Everything visual for the project lives here.
+Logo, favicon, social card, and the product demo video. Everything visual for the project lives here.
 
 ## Files
 
@@ -13,18 +13,17 @@ Logo, favicon, social card, and the product demo GIF. Everything visual for the 
 | `logo-lockup-dark.svg` | Lockup tuned for dark backgrounds. Paired with `logo-lockup.svg` via `<picture>` in the README. |
 | `favicon.svg` | Optimized for tiny sizes (thicker strokes, wider slit). Use as the browser tab / PyPI icon. |
 | `social-card.svg` | 1280×640 GitHub social preview. Upload via repo Settings → Social preview. |
-| `demo.gif` | *(not committed yet)* 30-second product demo. Embedded at top of README. |
+| `demo_new.mov` | ~30-second product demo. Embedded in README (secret block + taint leak). |
 
-## Recording `demo.gif`
+## Recording the demo
 
-See [demo-recording.md](demo-recording.md) for the storyboard and capture steps.
+See [demo-recording.md](../demo-recording.md). Save as `demo_new.mov` or export **MP4** from Kap for widest browser support.
 
-```bash
-bash scripts/demo.sh
-# record terminal → save as demo.gif in this folder
+README embed:
+
+```html
+<video controls playsinline width="100%" src="docs/assets/demo_new.mov"></video>
 ```
-
-Once the file is committed, the top-of-README image tag can point at it: `![Sluice demo](docs/assets/demo.gif)`.
 
 ## Palette
 
