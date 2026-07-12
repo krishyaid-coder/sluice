@@ -1,0 +1,16 @@
+services:
+  sluice:
+    build: .
+    ports:
+      - "4444:4444"
+    volumes:
+      - ./config.yaml:/etc/sluice/config.yaml:ro
+      - sluice-data:/var/lib/sluice
+    command: >
+      serve
+      --config /etc/sluice/config.yaml
+      --host 0.0.0.0
+    restart: unless-stopped
+
+volumes:
+  sluice-data:

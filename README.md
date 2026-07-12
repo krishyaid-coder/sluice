@@ -37,6 +37,35 @@ New in this release:
 
 **Full setup and validation guide:** [docs/guide.md](docs/guide.md)
 
+### Demo
+
+```bash
+bash scripts/demo.sh
+```
+
+Shows a direct secret block, then a cross-tool `taint_leak` block. Record a GIF with [docs/demo-recording.md](docs/demo-recording.md).
+
+### Docker (HTTP mode)
+
+```bash
+sluice init
+# edit config.yaml — set audit.sqlite.path to /var/lib/sluice/audit.db for persistence
+
+docker compose up --build
+# Sluice on http://localhost:4444, dashboard at http://localhost:4444/_sluice/
+```
+
+Pre-built images (after tag push): `ghcr.io/krishyaid-coder/sluice:latest`
+
+```bash
+docker run --rm -p 4444:4444 \
+  -v "$PWD/config.yaml:/etc/sluice/config.yaml:ro" \
+  -v sluice-audit:/var/lib/sluice \
+  ghcr.io/krishyaid-coder/sluice:latest serve --config /etc/sluice/config.yaml --host 0.0.0.0
+```
+
+Desktop clients (Cursor, Claude) use `pip install sluice-taint` and `sluice stdio`, not Docker.
+
 ## v0.1.0
 
 This release ships:
@@ -144,6 +173,10 @@ HTTP mode can front more than one upstream. Send traffic to `POST /u/<upstream-n
 `sluice doctor` loads your config and reports obvious problems.
 
 `sluice version` prints the build.
+
+`sluice presets list|show|apply` manages bundled policy presets.
+
+Open the dashboard at `http://127.0.0.1:4444/_sluice/` while `sluice serve` is running.
 
 ## Rules and outcomes
 
