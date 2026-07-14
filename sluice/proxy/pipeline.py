@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 import structlog
 
-from sluice.detectors.base import ScanContext
-from sluice.policy.engine import bootstrap_detectors, evaluate
+from sluice.detectors.base import Hit, ScanContext
+from sluice.policy.engine import bootstrap_detectors, evaluate, resolve_action
 from sluice.proxy.models import AuditEvent, PolicyViolation
 from sluice.session import taint
 
@@ -112,10 +112,44 @@ class Pipeline:
                         "rule": edge.rule,
                     }
                 ]
+            # Wire taint through the policy engine so user rules apply. Fallback
+            # order: no explicit rule (or default_action fallback) -> block, since
+            # taint should never silently inherit a permissive default_action.
+            # 'redact' is nonsensical for taint (the whole value triggers) so coerce
+            # to block with a log; 'pass' also coerces to flag so the leak stays in
+            # the audit trail.
+            synthetic_hit = Hit(
+                detector_id="taint_leak",
+                start=0,
+                end=0,
+                matched="",
+                label="cross-tool leak",
+                severity="critical",
+            )
+            resolved = resolve_action([synthetic_hit], self._cfg, upstream, tool)
+            if resolved is None or resolved.rule_detector == "default":
+                action = "block"
+            elif resolved.action == "redact":
+                log.warning(
+                    "taint_redact_coerced_to_block",
+                    rule=resolved.rule_detector,
+                )
+                action = "block"
+            elif resolved.action == "pass":
+                log.warning(
+                    "taint_pass_coerced_to_flag",
+                    rule=resolved.rule_detector,
+                )
+                action = "flag"
+            elif resolved.action == "flag":
+                action = "flag"
+            else:
+                action = "block"
+
             violation = PolicyViolation(
                 rule="taint_leak",
                 detail="This value already appeared in an earlier tool response.",
-                action="block",
+                action=action,
                 detectors=["taint_leak"],
                 propagation=propagation,
             )
@@ -129,7 +163,7 @@ class Pipeline:
                 latency_us=latency,
                 client_ip=client_ip,
             )
-            log.warning("taint_leak_blocked", upstream=upstream, session_id=session_id)
+            log.warning(f"taint_leak_{action}", upstream=upstream, session_id=session_id)
             return raw, violation
 
         body, violation, hits = evaluate(raw, context, self._cfg)

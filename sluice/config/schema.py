@@ -52,9 +52,23 @@ class PolicyRule(BaseModel):
     preset_source: str | None = None
 
 
+_TAINT_RULE_PATTERNS = frozenset({"taint_leak", "taint.*", "taint_*"})
+
+
 class PolicyConfig(BaseModel):
     rules: list[PolicyRule] = Field(default_factory=list)
     default_action: Literal["block", "redact", "flag", "pass"] = "flag"
+
+    @model_validator(mode="after")
+    def reject_redact_for_taint(self) -> PolicyConfig:
+        for i, rule in enumerate(self.rules):
+            if rule.action == "redact" and rule.detector in _TAINT_RULE_PATTERNS:
+                raise ValueError(
+                    f"policy.rules[{i}]: action 'redact' is not valid for detector "
+                    f"{rule.detector!r}. A taint leak is triggered by the whole flagged "
+                    f"value; partial masking is not meaningful. Use 'block' or 'flag'."
+                )
+        return self
 
 
 class TaintConfig(BaseModel):
