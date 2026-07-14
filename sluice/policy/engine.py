@@ -6,12 +6,12 @@ from dataclasses import dataclass
 import structlog
 
 from sluice.config.schema import SluiceConfig
-from sluice.detectors import pii as pii_detector
 from sluice.detectors import (
+    pii,  # noqa: F401 — register detector
     prompt_injection,  # noqa: F401 — register detector
+    secrets,  # noqa: F401 — register detector
     tool_poisoning,  # noqa: F401 — register detector
 )
-from sluice.detectors import secrets as secrets_detector
 from sluice.detectors.base import (
     Hit,
     ScanContext,
@@ -130,13 +130,17 @@ def evaluate(
         ), hits
 
     if resolved.action == "redact":
+        # Single unified pass, sorted by start descending, so each replacement
+        # only shifts bytes we've already processed. Prior two-pass (secrets
+        # then pii) corrupted output when a secret preceded a pii match in the
+        # same message — the pii offsets were stale against the mutated body.
+        redactable = [
+            h for h in hits if h.detector_id.split(".", 1)[0] in ("secrets", "pii")
+        ]
         body = raw
-        secret_hits = [h for h in hits if h.detector_id.startswith("secrets.")]
-        pii_hits = [h for h in hits if h.detector_id.startswith("pii.")]
-        if secret_hits:
-            body, _ = secrets_detector.redact(body, secret_hits)
-        if pii_hits:
-            body, _ = pii_detector.redact(body, pii_hits)
+        for h in sorted(redactable, key=lambda x: (x.start, -x.end), reverse=True):
+            tag = h.detector_id.split(".")[-1].upper()
+            body = body[: h.start] + f"[REDACTED-{tag}]" + body[h.end :]
         log.info("policy_redact", detectors=[h.detector_id for h in hits], upstream=context.upstream)
         return body, PolicyViolation(
             rule="redacted",
