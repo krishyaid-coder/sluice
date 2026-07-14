@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sluice-taint"
-version = "0.3.2"
+version = "0.3.3"
 description = "A local gate for MCP traffic with cross-call memory for sensitive values."
 readme = "README.md"
 license = "Apache-2.0"
