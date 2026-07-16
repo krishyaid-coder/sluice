@@ -89,7 +89,9 @@ Your agent calls `read_file` and the response includes `AKIAIOSFODNN7EXAMPLE`. T
 
 Two turns later it calls `send_email` and the body includes the same string. Sluice has no opinion about the first call. It stops the second one because the value already appeared inside this session and is trying to travel again.
 
-<video controls playsinline width="100%" src="docs/assets/demo_new.mov"></video>
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="Sluice blocking a cross-tool leak" width="720">
+</p>
 
 Run it yourself: `bash scripts/demo.sh`
 

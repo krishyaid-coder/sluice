@@ -13,16 +13,20 @@ Logo, favicon, social card, and the product demo video. Everything visual for th
 | `logo-lockup-dark.svg` | Lockup tuned for dark backgrounds. Paired with `logo-lockup.svg` via `<picture>` in the README. |
 | `favicon.svg` | Optimized for tiny sizes (thicker strokes, wider slit). Use as the browser tab / PyPI icon. |
 | `social-card.svg` | 1280×640 GitHub social preview. Upload via repo Settings → Social preview. |
-| `demo_new.mov` | ~30-second product demo. Embedded in README (secret block + taint leak). |
+| `demo.gif` | ~30-second product demo. Embedded in README (secret block + taint leak). |
 
 ## Recording the demo
 
-See [demo-recording.md](../demo-recording.md). Save as `demo_new.mov` or export **MP4** from Kap for widest browser support.
+See [demo-recording.md](../demo-recording.md). Record with Kap, export to MP4, then convert to a high-quality GIF with `gifski` (`brew install gifski && gifski -o docs/assets/demo.gif -W 720 --fps 15 --quality 90 source.mp4`) so it renders inline on GitHub without quality loss.
+
+For non-GitHub channels (Reddit, X, LinkedIn) upload the source MP4 directly — those platforms play video natively.
 
 README embed:
 
 ```html
-<video controls playsinline width="100%" src="docs/assets/demo_new.mov"></video>
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="Sluice blocking a cross-tool leak" width="720">
+</p>
 ```
 
 ## Palette
