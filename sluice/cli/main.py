@@ -12,6 +12,7 @@ from sluice import __version__
 from sluice.audit import build_audit_sink
 from sluice.audit.sink import AuditFilter
 from sluice.cli.presets import presets_app
+from sluice.cli.report import register as register_report
 from sluice.config.loader import find_config, load_config
 from sluice.config.schema import default_config
 from sluice.proxy.pipeline import Pipeline
@@ -26,6 +27,7 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(presets_app, name="presets")
+register_report(app)
 
 
 def _setup_logging(level: str = "info") -> None:

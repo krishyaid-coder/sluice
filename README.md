@@ -243,6 +243,19 @@ HTTP mode can front more than one upstream. Send traffic to `POST /u/<upstream-n
 
 `sluice logs --since 1h` prints recent decisions from the local SQLite log.
 
+## See what Sluice caught
+
+For a summary of what happened in a session — sensitive values seen,
+where they went, what got blocked — use:
+
+    sluice report
+
+Or for a specific session:
+
+    sluice report --session sess-a3f9b2c1
+
+Add `--format markdown` to paste into a doc, or `--format json` to pipe.
+
 `sluice doctor` loads your config and reports obvious problems.
 
 `sluice version` prints the build.

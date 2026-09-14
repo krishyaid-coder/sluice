@@ -246,6 +246,59 @@ class SqliteSink(AuditSink):
                 )
         return rows
 
+    async def recent_session_ids(self, limit: int = 1) -> list[str]:
+        db = await self._conn()
+        ids: list[str] = []
+        async with db.execute(
+            """
+            SELECT session_id
+            FROM events
+            GROUP BY session_id
+            ORDER BY MAX(ts) DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ) as cursor:
+            async for (session_id,) in cursor:
+                ids.append(session_id)
+        return ids
+
+    async def events_for_session(self, session_id: str) -> list[AuditEvent]:
+        db = await self._conn()
+        rows: list[AuditEvent] = []
+        async with db.execute(
+            """
+            SELECT id, ts, session_id, upstream, direction, method, tool, action,
+                   detectors, rule, redacted_preview, latency_us, preset_source,
+                   client_ip, propagation
+            FROM events
+            WHERE session_id = ?
+            ORDER BY ts ASC, id ASC
+            """,
+            (session_id,),
+        ) as cursor:
+            async for row in cursor:
+                rows.append(
+                    AuditEvent(
+                        event_id=row[0],
+                        ts=row[1],
+                        session_id=row[2],
+                        upstream=row[3],
+                        direction=row[4],
+                        method=row[5],
+                        tool=row[6],
+                        action=row[7],
+                        detectors=json.loads(row[8] or "[]"),
+                        rule=row[9],
+                        redacted_preview=row[10],
+                        latency_us=row[11],
+                        preset_source=row[12],
+                        client_ip=row[13],
+                        propagation=json.loads(row[14]) if row[14] else None,
+                    )
+                )
+        return rows
+
     async def close(self) -> None:
         if self._db:
             await self._db.close()

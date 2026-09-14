@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from typing import TypeVar
+
 import structlog
 
 from sluice.audit.sink import AuditFilter, AuditSink
 from sluice.proxy.models import AuditEvent
 
 log = structlog.get_logger()
+
+T = TypeVar("T")
 
 
 class StdoutSink(AuditSink):
@@ -38,6 +42,20 @@ class StdoutSink(AuditSink):
 class ChainedSink(AuditSink):
     def __init__(self, sinks: list[AuditSink]) -> None:
         self._sinks = sinks
+
+    @property
+    def sinks(self) -> tuple[AuditSink, ...]:
+        return tuple(self._sinks)
+
+    def find(self, cls: type[T]) -> T | None:
+        for sink in self._sinks:
+            if isinstance(sink, cls):
+                return sink
+            if isinstance(sink, ChainedSink):
+                found = sink.find(cls)
+                if found is not None:
+                    return found
+        return None
 
     async def write(self, event: AuditEvent) -> None:
         for sink in self._sinks:
