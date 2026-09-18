@@ -95,9 +95,22 @@ Two turns later it calls `send_email` and the body includes the same string. Slu
 
 Run it yourself: `bash scripts/demo.sh`
 
-## v0.3.0
+## v0.4.0
 
 New in this release:
+
+- **`pseudonymize` policy action** for PII, with full round-trip substitution. The LLM sees stable placeholders like `EMAIL_A`; Sluice restores real values before outbound tool calls reach the server. See [Pseudonymize instead of block](#pseudonymize-instead-of-block) below.
+- **`sluice report`** — per-session summary of sensitive values seen, actions taken, detectors fired. Human, markdown, or JSON. See [See what Sluice caught](#see-what-sluice-caught) below.
+
+<p align="center">
+  <img src="docs/assets/pseudonymize-flow.png" alt="Pseudonymize round trip: tool response contains jane@corp.com, LLM sees EMAIL_A, LLM writes send_email(to=EMAIL_A), tool server receives jane@corp.com" width="820">
+</p>
+
+Full release notes: [docs/releases/v0.4.0.md](docs/releases/v0.4.0.md).
+
+## v0.3.0
+
+New in v0.3.0:
 
 - Policy presets for filesystem, github, slack, postgres, brave-search (`sluice presets`)
 - Read-only HTML dashboard at `/_sluice/`
