@@ -4,7 +4,7 @@ Sluice supports a third policy action for PII, beyond `block` and `redact`:
 `pseudonymize`. This document explains what it does, what it does not do,
 and the specific limitations users should understand before deploying it.
 
-**Status:** shipped in v0.4 (Version B — full round-trip). Session-scoped,
+**Status:** shipped in v0.4 (Version B is a full round-trip). Session-scoped,
 PII-only, fail-closed on reverse.
 
 ---
@@ -15,7 +15,7 @@ Real workflows need agents to reason about sensitive data without exposing
 that data to the underlying LLM. Two examples:
 
 - A support agent needs to look up a customer's ticket, understand the
-  situation, and reply to the customer — without the LLM ever seeing the
+  situation, and reply to the customer without the LLM ever seeing the
   customer's real name, email, or credit-card last-four.
 - A meeting scheduler needs to see a team's contact list, find a common
   slot, and send invites — without the LLM ever seeing real email addresses.
@@ -151,7 +151,7 @@ intercept the AI's chat response back to the user. If the AI reads a
 pseudonymized tool response and then writes *"I emailed EMAIL_A about the
 meeting"* to the user, the user will see `EMAIL_A` in the chat.
 
-The **real email is still sent** to `jane@corp.com` — Sluice restored the
+The **real email is still sent** to `jane@corp.com` Sluice restored the
 real value on the outbound tool call. But the AI's user-facing chat text
 may reference the pseudonym.
 
@@ -206,7 +206,7 @@ Pseudonymization adds a small forward-pass cost (dictionary lookup per PII
 hit) and a small reverse-pass cost (regex scan + dictionary lookup per
 outbound message). No measured impact on the 0.02 ms clean-path p50
 overhead. When PII is present, expect similar per-hit latency to the
-redact path — both do a substring replace.
+redact path, both do a substring replace.
 
 ---
 
@@ -225,7 +225,7 @@ redact path — both do a substring replace.
 - Persistent cross-session identity (session-scoped only)
 - Adversarial content that deliberately mimics pseudonym tokens to trick
   the reverse pass into incorrect substitutions (design does not defend
-  against this — the token set is not authenticated)
+  against this the token set is not authenticated)
 - Timing side-channels that might reveal registry size
 
 ---
