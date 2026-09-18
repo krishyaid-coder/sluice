@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+  <defs>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="560" fill="#fafaf9"/>
+
+  <!-- Title -->
+  <text x="500" y="42" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">
+    Sluice pseudonymize: the round trip
+  </text>
+  <text x="500" y="66" text-anchor="middle" font-size="13" fill="#64748b">
+    Real values stay on your disk and reach real tools. The LLM only ever sees the placeholder.
+  </text>
+
+  <!-- =================================================================== -->
+  <!-- LEFT PANEL — WITHOUT PSEUDONYMIZE                                   -->
+  <!-- =================================================================== -->
+  <g transform="translate(40, 100)">
+    <rect x="0" y="0" width="450" height="440" rx="12" fill="#fef2f2" stroke="#fecaca" stroke-width="1.5"/>
+
+    <text x="225" y="32" text-anchor="middle" font-size="14" font-weight="700" fill="#991b1b" letter-spacing="0.6">
+      WITHOUT PSEUDONYMIZE
+    </text>
+    <text x="225" y="52" text-anchor="middle" font-size="12" fill="#7f1d1d">
+      The LLM sees the raw value the whole time.
+    </text>
+
+    <!-- Step 1: Tool response -->
+    <g transform="translate(30, 78)">
+      <text x="0" y="0" font-size="11" font-weight="600" fill="#64748b" letter-spacing="0.6">TOOL RESPONSE</text>
+      <rect x="0" y="8" width="390" height="44" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="195" y="35" text-anchor="middle" font-size="14" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#0f172a">jane@corp.com</text>
+    </g>
+
+    <line x1="225" y1="148" x2="225" y2="170" stroke="#dc2626" stroke-width="2" marker-end="url(#arrow-red)"/>
+
+    <!-- Step 2: LLM sees -->
+    <g transform="translate(30, 178)">
+      <text x="0" y="0" font-size="11" font-weight="600" fill="#64748b" letter-spacing="0.6">LLM SEES</text>
+      <rect x="0" y="8" width="390" height="44" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+      <text x="20" y="35" font-size="14" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#7f1d1d">jane@corp.com</text>
+      <!-- inline badge, right-aligned inside the box -->
+      <g transform="translate(320, 20)">
+        <rect x="0" y="0" width="56" height="20" rx="10" fill="#dc2626"/>
+        <text x="28" y="14" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff" letter-spacing="0.8">LEAK</text>
+      </g>
+    </g>
+
+    <line x1="225" y1="248" x2="225" y2="270" stroke="#dc2626" stroke-width="2" marker-end="url(#arrow-red)"/>
+
+    <!-- Step 3: LLM writes -->
+    <g transform="translate(30, 278)">
+      <text x="0" y="0" font-size="11" font-weight="600" fill="#64748b" letter-spacing="0.6">LLM WRITES</text>
+      <rect x="0" y="8" width="390" height="44" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="195" y="35" text-anchor="middle" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#0f172a">send_email(to="jane@corp.com")</text>
+    </g>
+
+    <line x1="225" y1="348" x2="225" y2="370" stroke="#dc2626" stroke-width="2" marker-end="url(#arrow-red)"/>
+
+    <!-- Step 4: Tool receives -->
+    <g transform="translate(30, 378)">
+      <text x="0" y="0" font-size="11" font-weight="600" fill="#64748b" letter-spacing="0.6">TOOL RECEIVES</text>
+      <rect x="0" y="8" width="390" height="44" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="195" y="35" text-anchor="middle" font-size="14" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#0f172a">jane@corp.com</text>
+    </g>
+  </g>
+
+  <!-- =================================================================== -->
+  <!-- RIGHT PANEL — WITH PSEUDONYMIZE                                     -->
+  <!-- =================================================================== -->
+  <g transform="translate(510, 100)">
+    <rect x="0" y="0" width="450" height="440" rx="12" fill="#f0fdfa" stroke="#99f6e4" stroke-width="1.5"/>
+
+    <text x="225" y="32" text-anchor="middle" font-size="14" font-weight="700" fill="#0f766e" letter-spacing="0.6">
+      WITH PSEUDONYMIZE
+    </text>
+    <text x="225" y="52" text-anchor="middle" font-size="12" fill="#134e4a">
+      Sluice swaps values at the boundary; LLM only ever sees the placeholder.
+    </text>
+
+    <!-- Step 1: Tool response -->
+    <g transform="translate(30, 78)">
+      <text x="0" y="0" font-size="11" font-weight="600" fill="#64748b" letter-spacing="0.6">TOOL RESPONSE</text>
+      <rect x="0" y="8" width="390" height="44" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="195" y="35" text-anchor="middle" font-size="14" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#0f172a">jane@corp.com</text>
+    </g>
+
+    <!-- Arrow 1 with Sluice pill -->
+    <line x1="225" y1="148" x2="225" y2="170" stroke="#0f766e" stroke-width="2" marker-end="url(#arrow-teal)"/>
+    <g transform="translate(250, 152)">
+      <rect x="0" y="0" width="118" height="20" rx="10" fill="#0f766e"/>
+      <text x="59" y="14" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff" letter-spacing="0.8">SLUICE REPLACES</text>
+    </g>
+
+    <!-- Step 2: LLM sees -->
+    <g transform="translate(30, 178)">
+      <text x="0" y="0" font-size="11" font-weight="600" fill="#64748b" letter-spacing="0.6">LLM SEES</text>
+      <rect x="0" y="8" width="390" height="44" rx="8" fill="#ccfbf1" stroke="#0f766e" stroke-width="2"/>
+      <text x="20" y="35" font-size="14" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#0f766e">EMAIL_A</text>
+      <!-- inline badge, right-aligned inside the box -->
+      <g transform="translate(320, 20)">
+        <rect x="0" y="0" width="56" height="20" rx="10" fill="#0f766e"/>
+        <text x="28" y="14" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff" letter-spacing="0.8">SAFE</text>
+      </g>
+    </g>
+
+    <line x1="225" y1="248" x2="225" y2="270" stroke="#0f766e" stroke-width="2" marker-end="url(#arrow-teal)"/>
+
+    <!-- Step 3: LLM writes -->
+    <g transform="translate(30, 278)">
+      <text x="0" y="0" font-size="11" font-weight="600" fill="#64748b" letter-spacing="0.6">LLM WRITES</text>
+      <rect x="0" y="8" width="390" height="44" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="195" y="35" text-anchor="middle" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#0f766e">send_email(to=<tspan font-weight="700">"EMAIL_A"</tspan>)</text>
+    </g>
+
+    <!-- Arrow 3 with Sluice pill -->
+    <line x1="225" y1="348" x2="225" y2="370" stroke="#0f766e" stroke-width="2" marker-end="url(#arrow-teal)"/>
+    <g transform="translate(250, 352)">
+      <rect x="0" y="0" width="118" height="20" rx="10" fill="#0f766e"/>
+      <text x="59" y="14" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff" letter-spacing="0.8">SLUICE RESTORES</text>
+    </g>
+
+    <!-- Step 4: Tool receives -->
+    <g transform="translate(30, 378)">
+      <text x="0" y="0" font-size="11" font-weight="600" fill="#64748b" letter-spacing="0.6">TOOL RECEIVES</text>
+      <rect x="0" y="8" width="390" height="44" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="195" y="35" text-anchor="middle" font-size="14" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" fill="#0f172a">jane@corp.com</text>
+    </g>
+  </g>
+</svg>
