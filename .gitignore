@@ -31,4 +31,4 @@ config.yaml
 # IDEs
 .idea/
 .vscode/
-*.swp
+*.swpconfig.yaml.upgraded
