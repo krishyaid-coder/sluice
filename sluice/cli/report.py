@@ -79,6 +79,8 @@ def _header_times(report: SessionReport) -> str:
 def _actions_phrase(report: SessionReport) -> str:
     counts = report.summary.actions
     parts = [f"{counts.blocked} blocked", f"{counts.redacted} redacted"]
+    if counts.pseudonymized:
+        parts.append(f"{counts.pseudonymized} pseudonymized")
     if counts.flagged:
         parts.append(f"{counts.flagged} flagged")
     parts.append(f"{counts.passed} passed")

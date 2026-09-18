@@ -139,6 +139,28 @@ docker run --rm -p 4444:4444 \
 
 Desktop clients (Cursor, Claude) use `pip install sluice-taint` and `sluice stdio`, not Docker.
 
+## Pseudonymize instead of block
+
+For PII, a third policy action beyond `block` and `redact`: `pseudonymize`.
+The AI sees stable placeholders like `EMAIL_A` instead of the real values.
+When the AI later issues a tool call using those placeholders, Sluice
+substitutes real values back before the call reaches the tool server.
+
+```yaml
+policy:
+  rules:
+    - detector: "pii.*"
+      action: "pseudonymize"
+
+pseudonym:
+  enabled: true
+  fail_closed_on_reverse: true
+```
+
+Round trip in one sentence: real values on your disk and on the wire, stable
+pseudonyms in the AI's context. See [docs/design/pseudonymization.md](docs/design/pseudonymization.md)
+for the full behavior including limitations.
+
 ## v0.1.0
 
 This release ships:

@@ -9,6 +9,7 @@ import structlog
 from sluice.detectors.base import Hit, ScanContext
 from sluice.policy.engine import bootstrap_detectors, evaluate, resolve_action
 from sluice.proxy.models import AuditEvent, PolicyViolation
+from sluice.session import pseudonym as pseudonym_session
 from sluice.session import taint
 
 if TYPE_CHECKING:
@@ -24,6 +25,59 @@ class Pipeline:
         self._audit = audit
         bootstrap_detectors()
         taint.configure(cfg)
+        pseudonym_session.configure(cfg)
+
+    def _reverse_pseudonyms(
+        self, raw: str, session_id: str
+    ) -> tuple[str, int, PolicyViolation | None]:
+        """Substitute known pseudonyms with real values in outbound request bodies.
+
+        Returns (body, substituted_count, block_violation). If the pipeline is
+        configured fail-closed and the message contains a pseudonym-shaped
+        token that is not in the session registry, returns a block violation
+        with the raw body unchanged.
+        """
+        store = pseudonym_session.store()
+        if store is None or not store.enabled:
+            return raw, 0, None
+        tokens = pseudonym_session.find_pseudonym_tokens(raw)
+        if not tokens:
+            return raw, 0, None
+
+        registry = pseudonym_session.registry_for(session_id)
+        assert registry is not None  # store.enabled is True
+
+        unknown: list[str] = []
+        substitutions: list[tuple[str, str]] = []
+        for token in tokens:
+            real = registry.lookup(token)
+            if real is None:
+                unknown.append(token)
+            else:
+                substitutions.append((token, real))
+
+        if unknown and store.fail_closed_on_reverse:
+            preview = ", ".join(unknown[:3]) + ("…" if len(unknown) > 3 else "")
+            log.warning(
+                "pseudonym_reverse_unknown",
+                session_id=session_id,
+                unknown=unknown[:5],
+            )
+            return raw, 0, PolicyViolation(
+                rule="pseudonym_unknown",
+                detail=(
+                    f"Refusing call: outbound message contains unknown pseudonym "
+                    f"tokens ({preview}). Session registry has no mapping. "
+                    f"This is fail-closed behaviour."
+                ),
+                action="block",
+                detectors=["pseudonym_unknown"],
+            )
+
+        body = raw
+        for token, real in substitutions:
+            body = body.replace(token, real)
+        return body, len(substitutions), None
 
     def _tool_from_raw(self, raw: str) -> str | None:
         try:
@@ -92,7 +146,33 @@ class Pipeline:
         tool = self._tool_from_raw(raw)
         context = ScanContext("request", method, tool, upstream, session_id)
 
-        leak = taint.check(session_id, raw)
+        # Reverse-pseudonym pass first. AI-authored outbound may contain
+        # pseudonyms like EMAIL_A that need to become the real value before
+        # the tool server sees them. Fail-closed on unknown pseudonyms.
+        body_reversed, reversed_count, reverse_block = self._reverse_pseudonyms(
+            raw, session_id
+        )
+        if reverse_block is not None:
+            latency = (time.perf_counter_ns() - start) // 1000
+            await self._audit_write(
+                session_id=session_id,
+                upstream=upstream,
+                direction="request",
+                raw=raw,
+                violation=reverse_block,
+                latency_us=latency,
+                client_ip=client_ip,
+            )
+            log.warning(
+                "pseudonym_reverse_blocked", upstream=upstream, session_id=session_id
+            )
+            return raw, reverse_block
+
+        # If substitutions happened, skip the taint check. The user explicitly
+        # opted into pseudonymized round-trip; blocking the reversed real value
+        # with taint would defeat the whole feature.
+        skip_taint = reversed_count > 0
+        leak = None if skip_taint else taint.check(session_id, body_reversed)
         if leak:
             edge = taint.propagation_edge_for_leak(
                 session_id,
@@ -164,9 +244,9 @@ class Pipeline:
                 client_ip=client_ip,
             )
             log.warning(f"taint_leak_{action}", upstream=upstream, session_id=session_id)
-            return raw, violation
+            return body_reversed, violation
 
-        body, violation, hits = evaluate(raw, context, self._cfg)
+        body, violation, hits = evaluate(body_reversed, context, self._cfg)
         latency = (time.perf_counter_ns() - start) // 1000
         await self._audit_write(
             session_id=session_id,

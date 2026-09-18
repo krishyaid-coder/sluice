@@ -49,6 +49,7 @@ class SensitiveValue:
 class ActionCounts:
     blocked: int = 0
     redacted: int = 0
+    pseudonymized: int = 0
     flagged: int = 0
     passed: int = 0
 
@@ -181,6 +182,8 @@ def build_session_report(session_id: str, events: list[AuditEvent]) -> SessionRe
             actions.blocked += 1
         elif event.action == "redact":
             actions.redacted += 1
+        elif event.action == "pseudonymize":
+            actions.pseudonymized += 1
         elif event.action == "flag":
             actions.flagged += 1
         else:
@@ -288,6 +291,7 @@ def report_to_json_dict(report: SessionReport) -> dict[str, Any]:
             "actions": {
                 "blocked": report.summary.actions.blocked,
                 "redacted": report.summary.actions.redacted,
+                "pseudonymized": report.summary.actions.pseudonymized,
                 "flagged": report.summary.actions.flagged,
                 "passed": report.summary.actions.passed,
             },

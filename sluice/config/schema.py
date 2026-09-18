@@ -46,27 +46,32 @@ class DetectorsConfig(BaseModel):
 
 class PolicyRule(BaseModel):
     detector: str
-    action: Literal["block", "redact", "flag", "pass"]
+    action: Literal["block", "redact", "pseudonymize", "flag", "pass"]
     upstream: str | None = None
     tool: str | None = None
     preset_source: str | None = None
 
 
 _TAINT_RULE_PATTERNS = frozenset({"taint_leak", "taint.*", "taint_*"})
+_TAINT_INCOMPATIBLE_ACTIONS = frozenset({"redact", "pseudonymize"})
 
 
 class PolicyConfig(BaseModel):
     rules: list[PolicyRule] = Field(default_factory=list)
-    default_action: Literal["block", "redact", "flag", "pass"] = "flag"
+    default_action: Literal["block", "redact", "pseudonymize", "flag", "pass"] = "flag"
 
     @model_validator(mode="after")
-    def reject_redact_for_taint(self) -> PolicyConfig:
+    def reject_partial_actions_for_taint(self) -> PolicyConfig:
         for i, rule in enumerate(self.rules):
-            if rule.action == "redact" and rule.detector in _TAINT_RULE_PATTERNS:
+            if (
+                rule.action in _TAINT_INCOMPATIBLE_ACTIONS
+                and rule.detector in _TAINT_RULE_PATTERNS
+            ):
                 raise ValueError(
-                    f"policy.rules[{i}]: action 'redact' is not valid for detector "
+                    f"policy.rules[{i}]: action {rule.action!r} is not valid for detector "
                     f"{rule.detector!r}. A taint leak is triggered by the whole flagged "
-                    f"value; partial masking is not meaningful. Use 'block' or 'flag'."
+                    f"value; partial masking or pseudonymization is not meaningful. "
+                    f"Use 'block' or 'flag'."
                 )
         return self
 
@@ -76,6 +81,28 @@ class TaintConfig(BaseModel):
     min_length: int = 12
     scope: Literal["session", "process"] = "session"
     provenance: bool = True
+
+
+class PseudonymConfig(BaseModel):
+    """Consistent PII pseudonymization with per-session round-trip.
+
+    When a policy rule fires with ``action: pseudonymize`` on a PII hit, the
+    matched value is replaced with a stable placeholder like ``EMAIL_A``. The
+    same value gets the same placeholder for the rest of the session. On any
+    outbound tool call whose arguments carry that placeholder, Sluice reverse-
+    translates it back to the real value before the call reaches the tool
+    server. Only PII is pseudonymized; secrets follow the redact path.
+    """
+
+    enabled: bool = True
+    # Fail-closed on the reverse pass: if the outbound message contains a
+    # pseudonym-shaped token that is NOT in the session registry, block the
+    # call rather than let something ambiguous through.
+    fail_closed_on_reverse: bool = True
+    # Prefix pattern used for the placeholder. TYPE_A style is human-readable.
+    # Distinctive-enough uppercase-and-underscore shape reduces collision with
+    # real content that might happen to contain the same token.
+    scheme: Literal["type_alpha"] = "type_alpha"
 
 
 class StreamableHttpConfig(BaseModel):
@@ -124,6 +151,7 @@ class SluiceConfig(BaseModel):
     detectors: DetectorsConfig = Field(default_factory=DetectorsConfig)
     policy: PolicyConfig = Field(default_factory=PolicyConfig)
     taint: TaintConfig = Field(default_factory=TaintConfig)
+    pseudonym: PseudonymConfig = Field(default_factory=PseudonymConfig)
     transports: TransportsConfig = Field(default_factory=TransportsConfig)
     dashboard: DashboardConfig = Field(default_factory=DashboardConfig)
     otel: OtelConfig = Field(default_factory=OtelConfig)

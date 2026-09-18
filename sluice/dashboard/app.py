@@ -9,8 +9,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from sluice.audit.report import sqlite_sink
 from sluice.audit.sink import AuditFilter
-from sluice.audit.sqlite import SqliteSink
 from sluice.config.schema import SluiceConfig
 from sluice.session import taint
 
@@ -21,21 +21,9 @@ _DASHBOARD_DIR = Path(__file__).parent
 templates = Jinja2Templates(directory=str(_DASHBOARD_DIR / "templates"))
 
 
-def _sqlite_sink(audit: AuditSink | None) -> SqliteSink | None:
-    if isinstance(audit, SqliteSink):
-        return audit
-    chained = getattr(audit, "_sinks", None)
-    if chained:
-        for sink in chained:
-            found = _sqlite_sink(sink)
-            if found:
-                return found
-    return None
-
-
 def create_dashboard(cfg: SluiceConfig, audit: AuditSink | None) -> FastAPI:
     app = FastAPI(title="Sluice Dashboard", docs_url=None, redoc_url=None)
-    sqlite = _sqlite_sink(audit)
+    sqlite = sqlite_sink(audit)
     static_dir = _DASHBOARD_DIR / "static"
     if static_dir.is_dir():
         app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")

@@ -20,6 +20,7 @@ from sluice.detectors.base import (
     scan_all,
 )
 from sluice.proxy.models import PolicyViolation
+from sluice.session import pseudonym as pseudonym_session
 
 log = structlog.get_logger()
 
@@ -146,6 +147,70 @@ def evaluate(
             rule="redacted",
             detail=f"Removed sensitive fragments before forwarding ({context.method or context.direction}).",
             action="redact",
+            detectors=[h.detector_id for h in hits],
+            preset_source=resolved.preset_source,
+        ), hits
+
+    if resolved.action == "pseudonymize":
+        # Pseudonymize is a response-direction action. On requests, the reverse
+        # pass in the pipeline has already substituted any pseudonyms back to
+        # real values that the tool needs. Any PII hit that remains in an
+        # outbound request is AI-authored — coerce to flag so it's audited but
+        # not re-pseudonymized (which would either loop or break the tool call).
+        if context.direction == "request":
+            log.warning(
+                "pseudonymize_on_request_coerced_to_flag",
+                detectors=[h.detector_id for h in hits],
+                upstream=context.upstream,
+            )
+            return raw, PolicyViolation(
+                rule=resolved.hits[0].detector_id,
+                detail=(
+                    f"PII observed in outbound request "
+                    f"({context.method or context.direction}); "
+                    f"pseudonymize is response-direction only, flagged."
+                ),
+                action="flag",
+                detectors=[h.detector_id for h in hits],
+                preset_source=resolved.preset_source,
+            ), hits
+
+        # Response direction: PII hits get a stable per-session pseudonym;
+        # anything else that's sensitive (secrets) still goes through redact
+        # in the same pass so a mixed message doesn't quietly leak a secret.
+        # Uses the same sort-by-start-descending pattern as the redact path.
+        body = raw
+        substitutable = [
+            h for h in hits if h.detector_id.split(".", 1)[0] in ("secrets", "pii")
+        ]
+        replaced_pii = 0
+        for h in sorted(substitutable, key=lambda x: (x.start, -x.end), reverse=True):
+            category = h.detector_id.split(".", 1)[0]
+            if category == "pii":
+                replacement = pseudonym_session.assign(
+                    context.session_id, h.matched, h.detector_id
+                )
+                if replacement is None:
+                    # Pseudonymization is disabled but the rule still fired.
+                    # Fall back to redaction so the value never leaves in the clear.
+                    tag = h.detector_id.split(".")[-1].upper()
+                    replacement = f"[REDACTED-{tag}]"
+                else:
+                    replaced_pii += 1
+            else:
+                tag = h.detector_id.split(".")[-1].upper()
+                replacement = f"[REDACTED-{tag}]"
+            body = body[: h.start] + replacement + body[h.end :]
+        log.info(
+            "policy_pseudonymize",
+            detectors=[h.detector_id for h in hits],
+            upstream=context.upstream,
+            replaced_pii=replaced_pii,
+        )
+        return body, PolicyViolation(
+            rule="pseudonymized",
+            detail=f"Replaced PII with pseudonyms before forwarding ({context.method or context.direction}).",
+            action="pseudonymize",
             detectors=[h.detector_id for h in hits],
             preset_source=resolved.preset_source,
         ), hits
