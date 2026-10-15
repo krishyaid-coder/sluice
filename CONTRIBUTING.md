@@ -13,7 +13,7 @@ pytest tests/integration -v -m integration
 ## Adding a detector
 
 1. Copy an existing detector under `sluice/detectors/` (e.g. `prompt_injection.py`)
-2. Implement `scan(text, context) -> list[Hit]` — pure function, no I/O
+2. Implement `scan(text, context) -> list[Hit]` — pure function, no I/O (the supply-chain detector is the exception: network lookups are opt-in and fail-open)
 3. Register with `@register` for in-tree detectors, or via entry point for external packages
 4. Add policy rules in `config.yaml.example`
 5. Add tests under `tests/`

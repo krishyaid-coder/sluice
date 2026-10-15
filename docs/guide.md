@@ -12,7 +12,7 @@ Professional guide for installing, configuring, and validating Sluice on your ma
 
 Sluice sits between an AI agent (Cursor, Claude Desktop, Cline, custom) and one or more MCP tool servers. It inspects every JSON-RPC message in both directions:
 
-1. **Detectors** scan for secrets, PII, tool-poisoning patterns, and prompt-injection phrases.
+1. **Detectors** scan for secrets, PII, tool-poisoning patterns, prompt-injection phrases, and package-install calls (`supply_chain.*`).
 2. **Policy** decides whether to block, redact, flag, or pass each hit.
 3. **Session taint** remembers sensitive values that appeared in earlier tool responses and blocks reuse in later tool calls (`taint_leak`).
 

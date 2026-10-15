@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import structlog
 
+from sluice.detectors import supply_chain
 from sluice.detectors.base import Hit, ScanContext
 from sluice.policy.engine import bootstrap_detectors, evaluate, resolve_action
 from sluice.proxy.models import AuditEvent, PolicyViolation
@@ -26,6 +27,7 @@ class Pipeline:
         bootstrap_detectors()
         taint.configure(cfg)
         pseudonym_session.configure(cfg)
+        supply_chain.configure(cfg)
 
     def _reverse_pseudonyms(
         self, raw: str, session_id: str

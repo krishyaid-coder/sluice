@@ -31,13 +31,29 @@ detectors:
     enabled: true
   prompt_injection:
     enabled: true
+  supply_chain:
+    enabled: true
+    use_osv: false
+    use_github_advisories: false
+    typosquat_distance: 1
+    min_package_age_days: 0
+    allowlist: []
+    denylist: []
 
 policy:
   rules:
     - detector: secrets.*
       action: block
+    - detector: supply_chain.direct_url
+      action: block
+    - detector: supply_chain.typosquat
+      action: block
+    - detector: supply_chain.denylist
+      action: block
     - detector: pii.*
       action: redact
+    - detector: supply_chain.*
+      action: flag
     - detector: tool_poisoning.*
       action: flag
     - detector: prompt_injection.*

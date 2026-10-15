@@ -45,7 +45,7 @@ Every outbound JSON-RPC message walks the same steps.
 
 **Step 2. Pipeline runs recall check.** If the message body contains a value already stored for this session, Sluice returns a JSON-RPC error with rule `taint_leak`. The upstream is never contacted. v0.3 records a propagation edge in the audit log (source tool/path hash → sink tool).
 
-**Step 3. Pipeline runs detectors.** Pure text scanners look for credentials, PII, tool-poisoning patterns (on `tools/list`), and prompt-injection phrases (on tool responses).
+**Step 3. Pipeline runs detectors.** Pure text scanners look for credentials, PII, tool-poisoning patterns (on `tools/list`), prompt-injection phrases (on tool responses), and package-install commands in outbound tool args (`supply_chain.*`).
 
 **Step 4. Policy engine picks an outcome.** Rules in `config.yaml` are matched top to bottom. Each rule can scope to a detector pattern, upstream name, and tool name. Outcomes are `block`, `redact`, `flag`, or `pass`. Bundled presets can be included via `include: preset:<name>`.
 
@@ -88,7 +88,7 @@ Still intentionally heuristic: fast, deterministic, no ML. Not a full data-flow 
 | `proxy/transports/streamable_http.py` | Per-session SSE buffer + reconnect replay |
 | `proxy/pipeline.py` | Recall check, scan, policy, audit hooks |
 | `proxy/router.py` | Spawn stdio children or call HTTP upstreams |
-| `detectors/` | secrets, PII, tool_poisoning, prompt_injection |
+| `detectors/` | secrets, PII, tool_poisoning, prompt_injection, supply_chain |
 | `policy/engine.py` | Map detector hits to block / redact / flag |
 | `session/store.py` | Per-session carryover memory + provenance |
 | `session/provenance.py` | JSON-path extraction, propagation edges |

@@ -67,7 +67,7 @@ flowchart LR
 | **Transport** | stdio for desktop clients; HTTP for servers and Docker |
 | **Pipeline** | Taint recall, detector scan, policy action, audit write |
 | **Router** | Forwards allowed messages to the right MCP upstream |
-| **Detectors** | Secrets, PII, tool poisoning, prompt injection |
+| **Detectors** | Secrets, PII, tool poisoning, prompt injection, supply-chain installs |
 | **Taint store** | Remembers sensitive values per session; blocks reuse (`taint_leak`) |
 | **Audit / dashboard** | SQLite log + browser UI at `/_sluice/` |
 
@@ -118,6 +118,7 @@ New in v0.3.0:
 - Integration tests against a mock MCP server in CI
 - Taint v2: JSON-path provenance + propagation graph in audit log
 - Prompt-injection detector on tool responses
+- Supply-chain detector on package-install tool calls (typosquats, direct URLs, optional OSV)
 - Optional OpenTelemetry exporter (`pip install sluice-taint[otel]`)
 - Full streamable HTTP SSE reconnect with `Last-Event-Id`
 

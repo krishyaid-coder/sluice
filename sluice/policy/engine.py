@@ -10,6 +10,7 @@ from sluice.detectors import (
     pii,  # noqa: F401 — register detector
     prompt_injection,  # noqa: F401 — register detector
     secrets,  # noqa: F401 — register detector
+    supply_chain,  # noqa: F401 — register detector
     tool_poisoning,  # noqa: F401 — register detector
 )
 from sluice.detectors.base import (
@@ -43,6 +44,8 @@ def _enabled_categories(cfg: SluiceConfig) -> set[str]:
         enabled.add("tool_poisoning")
     if cfg.detectors.prompt_injection.enabled:
         enabled.add("prompt_injection")
+    if cfg.detectors.supply_chain.enabled:
+        enabled.add("supply_chain")
     return enabled
 
 

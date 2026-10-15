@@ -37,11 +37,25 @@ class DetectorToggle(BaseModel):
     severity_threshold: Literal["low", "medium", "high", "critical"] = "medium"
 
 
+class SupplyChainDetectorConfig(DetectorToggle):
+    """Install-call rubric. Offline by default; network lookups are opt-in."""
+
+    use_osv: bool = False
+    use_github_advisories: bool = False
+    typosquat_distance: int = 1
+    min_package_age_days: int = 0
+    check_maintainers: bool = False
+    check_install_hooks: bool = False
+    allowlist: list[str] = Field(default_factory=list)
+    denylist: list[str] = Field(default_factory=list)
+
+
 class DetectorsConfig(BaseModel):
     secrets: DetectorToggle = Field(default_factory=DetectorToggle)
     pii: DetectorToggle = Field(default_factory=DetectorToggle)
     tool_poisoning: DetectorToggle = Field(default_factory=DetectorToggle)
     prompt_injection: DetectorToggle = Field(default_factory=DetectorToggle)
+    supply_chain: SupplyChainDetectorConfig = Field(default_factory=SupplyChainDetectorConfig)
 
 
 class PolicyRule(BaseModel):
@@ -54,6 +68,10 @@ class PolicyRule(BaseModel):
 
 _TAINT_RULE_PATTERNS = frozenset({"taint_leak", "taint.*", "taint_*"})
 _TAINT_INCOMPATIBLE_ACTIONS = frozenset({"redact", "pseudonymize"})
+
+
+def _is_supply_chain_rule(detector: str) -> bool:
+    return detector == "supply_chain" or detector.startswith("supply_chain.")
 
 
 class PolicyConfig(BaseModel):
@@ -72,6 +90,14 @@ class PolicyConfig(BaseModel):
                     f"{rule.detector!r}. A taint leak is triggered by the whole flagged "
                     f"value; partial masking or pseudonymization is not meaningful. "
                     f"Use 'block' or 'flag'."
+                )
+            if rule.action in _TAINT_INCOMPATIBLE_ACTIONS and _is_supply_chain_rule(
+                rule.detector
+            ):
+                raise ValueError(
+                    f"policy.rules[{i}]: action {rule.action!r} is not valid for detector "
+                    f"{rule.detector!r}. Supply-chain hits are whole install calls, not "
+                    f"substrings to mask. Use 'block', 'flag', or 'pass'."
                 )
         return self
 
@@ -193,7 +219,11 @@ def default_config() -> SluiceConfig:
         policy=PolicyConfig(
             rules=[
                 PolicyRule(detector="secrets.*", action="block"),
+                PolicyRule(detector="supply_chain.direct_url", action="block"),
+                PolicyRule(detector="supply_chain.typosquat", action="block"),
+                PolicyRule(detector="supply_chain.denylist", action="block"),
                 PolicyRule(detector="pii.*", action="redact"),
+                PolicyRule(detector="supply_chain.*", action="flag"),
                 PolicyRule(detector="tool_poisoning.*", action="flag"),
                 PolicyRule(detector="prompt_injection.*", action="flag"),
             ]
