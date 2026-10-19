@@ -33,9 +33,11 @@ jobs:
           python-version: "3.12"
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
       - name: Install
         run: pip install -e ".[dev]"
+      - name: Prefetch filesystem MCP
+        run: npm install -g @modelcontextprotocol/server-filesystem
       - name: Integration tests
         run: pytest tests/integration -v -m integration
 

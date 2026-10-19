@@ -233,6 +233,27 @@ async def test_forward_rejects_notification_request():
         await up.aclose()
 
 
+ACKS_NOTIFICATION = r"""
+import json, sys
+for line in sys.stdin:
+    req = json.loads(line.strip())
+    if req.get("id") is None:
+        continue
+    print(json.dumps({"jsonrpc": "2.0", "id": req["id"], "result": {"ok": True}}), flush=True)
+"""
+
+
+@pytest.mark.asyncio
+async def test_send_notification_does_not_wait_for_reply():
+    up = _upstream(ACKS_NOTIFICATION)
+    try:
+        await up.send_notification(JSONRPCRequest(method="notifications/initialized"))
+        resp = await up.forward(JSONRPCRequest(id=1, method="ping"))
+        assert resp.result == {"ok": True}
+    finally:
+        await up.aclose()
+
+
 @pytest.mark.asyncio
 async def test_duplicate_id_in_flight_raises():
     """Same id used twice while first is in flight should surface loudly."""

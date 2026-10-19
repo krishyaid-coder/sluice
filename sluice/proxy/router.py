@@ -188,6 +188,15 @@ class StdioUpstream:
             self._pending.pop(request.id, None)
             raise
 
+    async def send_notification(self, request: JSONRPCRequest) -> None:
+        """Write a JSON-RPC notification (no id) and do not wait for a reply."""
+        proc = await self._ensure_proc()
+        assert proc.stdin is not None
+        line = json.dumps(request.model_dump(exclude_none=True)) + "\n"
+        async with self._write_lock:
+            proc.stdin.write(line.encode())
+            await proc.stdin.drain()
+
     async def aclose(self) -> None:
         self._closed = True
         if self._reader_task and not self._reader_task.done():
@@ -239,6 +248,13 @@ class Router:
         session_id: str,
     ) -> JSONRPCResponse:
         name = self.resolve_upstream(upstream_name)
+        if request.id is None:
+            if name in self._stdio:
+                await self._stdio[name].send_notification(request)
+                return JSONRPCResponse(jsonrpc="2.0", id=None, result={"ok": True})
+            if name in self._http:
+                return await self._http[name].forward(request, session_id)
+            raise KeyError(f"unknown upstream: {name}")
         if name in self._stdio:
             return await self._stdio[name].forward(request, session_id)
         if name in self._http:
