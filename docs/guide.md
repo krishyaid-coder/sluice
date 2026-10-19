@@ -499,7 +499,7 @@ Implement `scan(text, context) -> list[Hit]` and add a matching `policy.rules` e
 sluice serve --log-level debug
 ```
 
-Audit rows never store raw secrets — only redacted previews and hashed propagation metadata.
+Audit rows never store raw secrets. `redacted_preview` is detector labels plus SHA-256 prefixes (`secrets.aws_access_key=ab8f…`); propagation stores truncated `value_hash` only.
 
 ---
 

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import structlog
 
+from sluice.audit.preview import safe_preview
 from sluice.detectors import supply_chain
 from sluice.detectors.base import Hit, ScanContext
 from sluice.policy.engine import bootstrap_detectors, evaluate, resolve_action
@@ -96,12 +97,33 @@ class Pipeline:
         except (json.JSONDecodeError, AttributeError):
             return None
 
-    def _preview(self, raw: str, violation: PolicyViolation | None) -> str:
-        if violation and violation.action == "redact":
-            return raw[:200]
-        if len(raw) > 200:
-            return raw[:200] + "…"
-        return raw
+    def _preview(
+        self,
+        raw: str,
+        violation: PolicyViolation | None,
+        hits: list[Hit] | None = None,
+        extra_values: list[tuple[str, str]] | None = None,
+        session_id: str | None = None,
+    ) -> str:
+        extras = list(extra_values or [])
+        if session_id:
+            for mark in taint.list_marks(session_id):
+                if mark.value and mark.value in raw:
+                    extras.append(("taint", mark.value))
+        prop_hashes: list[str] = []
+        if violation and violation.propagation:
+            for edge in violation.propagation:
+                digest = edge.get("value_hash") or ""
+                if digest:
+                    prop_hashes.append(digest)
+        return safe_preview(
+            method=self._method_from_raw(raw),
+            tool=self._tool_from_raw(raw),
+            hits=hits,
+            violation=violation,
+            extra_values=extras,
+            propagation_hashes=prop_hashes,
+        )
 
     async def _audit_write(
         self,
@@ -113,6 +135,8 @@ class Pipeline:
         violation: PolicyViolation | None,
         latency_us: int,
         client_ip: str | None = None,
+        hits: list[Hit] | None = None,
+        extra_values: list[tuple[str, str]] | None = None,
     ) -> None:
         if not self._audit:
             return
@@ -127,7 +151,13 @@ class Pipeline:
                 action=action,
                 detectors=violation.detectors if violation else [],
                 rule=violation.rule if violation else None,
-                redacted_preview=self._preview(raw, violation),
+                redacted_preview=self._preview(
+                    raw,
+                    violation,
+                    hits=hits,
+                    extra_values=extra_values,
+                    session_id=session_id,
+                ),
                 latency_us=latency_us,
                 preset_source=violation.preset_source if violation else None,
                 client_ip=client_ip,
@@ -244,6 +274,7 @@ class Pipeline:
                 violation=violation,
                 latency_us=latency,
                 client_ip=client_ip,
+                extra_values=[("taint_leak", leak)],
             )
             log.warning(f"taint_leak_{action}", upstream=upstream, session_id=session_id)
             return body_reversed, violation
@@ -258,6 +289,7 @@ class Pipeline:
             violation=violation,
             latency_us=latency,
             client_ip=client_ip,
+            hits=hits,
         )
         return body, violation
 
@@ -294,6 +326,7 @@ class Pipeline:
             violation=violation,
             latency_us=latency,
             client_ip=client_ip,
+            hits=hits,
         )
         return body, violation
 
